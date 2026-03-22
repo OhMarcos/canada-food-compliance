@@ -1,0 +1,273 @@
+/**
+ * Canadian Food Regulations - Seed Data
+ *
+ * Actual laws, regulations, and guidelines governing food production
+ * and import in Canada. Each entry references real legislation with
+ * official URLs to the Justice Laws website.
+ */
+
+export const REGULATIONS = [
+  // ============================================
+  // PRIMARY ACTS
+  // ============================================
+  {
+    agency_acronym: "CFIA",
+    title_en: "Safe Food for Canadians Act",
+    title_ko: "캐나다 안전식품법",
+    short_name: "SFCA",
+    statute_type: "act" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/acts/S-1.1/",
+    gazette_citation: "S.C. 2012, c. 24",
+    effective_date: "2019-01-15",
+    last_amended: "2023-06-22",
+    applies_to: ["production", "import", "export", "licensing", "traceability"],
+  },
+  {
+    agency_acronym: "CFIA",
+    title_en: "Safe Food for Canadians Regulations",
+    title_ko: "캐나다 안전식품 규정",
+    short_name: "SFCR",
+    statute_type: "regulation" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2018-108/",
+    gazette_citation: "SOR/2018-108",
+    effective_date: "2019-01-15",
+    last_amended: "2024-01-01",
+    applies_to: ["production", "import", "export", "licensing", "labeling", "traceability", "preventive_controls"],
+  },
+  {
+    agency_acronym: "HC",
+    title_en: "Food and Drugs Act",
+    title_ko: "식품의약품법",
+    short_name: "FDA",
+    statute_type: "act" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/acts/f-27/",
+    gazette_citation: "R.S.C., 1985, c. F-27",
+    effective_date: "1985-01-01",
+    last_amended: "2024-06-20",
+    applies_to: ["production", "import", "safety", "labeling", "advertising", "standards"],
+  },
+  {
+    agency_acronym: "HC",
+    title_en: "Food and Drug Regulations",
+    title_ko: "식품의약품 규정",
+    short_name: "FDR",
+    statute_type: "regulation" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._870/",
+    gazette_citation: "C.R.C., c. 870",
+    effective_date: "1978-01-01",
+    last_amended: "2024-06-20",
+    applies_to: ["production", "import", "labeling", "additives", "standards", "nutrition_facts"],
+  },
+  {
+    agency_acronym: "CB",
+    title_en: "Consumer Packaging and Labelling Act",
+    title_ko: "소비자 포장 및 라벨링법",
+    short_name: "CPLA",
+    statute_type: "act" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/acts/c-38/",
+    gazette_citation: "R.S.C., 1985, c. C-38",
+    effective_date: "1985-01-01",
+    last_amended: "2019-06-17",
+    applies_to: ["labeling", "packaging", "bilingual_requirements", "net_quantity"],
+  },
+  {
+    agency_acronym: "CB",
+    title_en: "Consumer Packaging and Labelling Regulations",
+    title_ko: "소비자 포장 및 라벨링 규정",
+    short_name: "CPLR",
+    statute_type: "regulation" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._417/",
+    gazette_citation: "C.R.C., c. 417",
+    effective_date: "1978-01-01",
+    last_amended: "2019-06-17",
+    applies_to: ["labeling", "packaging", "net_quantity", "bilingual_requirements"],
+  },
+
+  // ============================================
+  // IMPORT-SPECIFIC REGULATIONS
+  // ============================================
+  {
+    agency_acronym: "CBSA",
+    title_en: "Customs Tariff Act",
+    title_ko: "관세법",
+    short_name: "CTA",
+    statute_type: "act" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/acts/c-54.011/",
+    gazette_citation: "S.C. 1997, c. 36",
+    effective_date: "1998-01-01",
+    last_amended: "2024-01-01",
+    applies_to: ["import", "tariff", "duties", "trade_agreements"],
+  },
+  {
+    agency_acronym: "GAC",
+    title_en: "Canada-Korea Free Trade Agreement Implementation Act",
+    title_ko: "한-캐 자유무역협정 이행법",
+    short_name: "CKFTA",
+    statute_type: "act" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/acts/C-1.65/",
+    gazette_citation: "S.C. 2014, c. 28",
+    effective_date: "2015-01-01",
+    last_amended: "2015-01-01",
+    applies_to: ["import", "tariff", "trade_agreements", "korea"],
+  },
+
+  // ============================================
+  // ADDITIONAL FOOD SAFETY REGULATIONS
+  // ============================================
+  {
+    agency_acronym: "HC",
+    title_en: "Natural Health Products Regulations",
+    title_ko: "천연건강제품 규정",
+    short_name: "NHPR",
+    statute_type: "regulation" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2003-196/",
+    gazette_citation: "SOR/2003-196",
+    effective_date: "2004-01-01",
+    last_amended: "2024-01-01",
+    applies_to: ["production", "import", "labeling", "health_claims", "natural_health_products"],
+  },
+  {
+    agency_acronym: "HC",
+    title_en: "Novel Foods Regulations (Division 28 of FDR)",
+    title_ko: "신규 식품 규정 (FDR 제28부)",
+    short_name: "NFR",
+    statute_type: "regulation" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._870/page-176.html",
+    gazette_citation: "Part of C.R.C., c. 870, Division 28",
+    effective_date: "1999-10-01",
+    last_amended: "2022-01-01",
+    applies_to: ["production", "import", "novel_foods", "gmo", "pre_market_approval"],
+  },
+  {
+    agency_acronym: "MC",
+    title_en: "Weights and Measures Act",
+    title_ko: "도량형법",
+    short_name: "WMA",
+    statute_type: "act" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/acts/w-6/",
+    gazette_citation: "R.S.C., 1985, c. W-6",
+    effective_date: "1985-01-01",
+    last_amended: "2019-06-17",
+    applies_to: ["labeling", "net_quantity", "measurement"],
+  },
+
+  // ============================================
+  // CFIA GUIDANCE DOCUMENTS
+  // ============================================
+  {
+    agency_acronym: "CFIA",
+    title_en: "CFIA Food Labelling Requirements Guide",
+    title_ko: "CFIA 식품 라벨링 요건 가이드",
+    short_name: "CFIA-LABEL-GUIDE",
+    statute_type: "guideline" as const,
+    official_url: "https://inspection.canada.ca/food-labels/labelling/industry/",
+    gazette_citation: null,
+    effective_date: "2019-01-15",
+    last_amended: "2024-01-01",
+    applies_to: ["labeling", "production", "import"],
+  },
+  {
+    agency_acronym: "CFIA",
+    title_en: "Automated Import Reference System (AIRS)",
+    title_ko: "자동 수입 참조 시스템 (AIRS)",
+    short_name: "AIRS",
+    statute_type: "guideline" as const,
+    official_url: "https://airs-sari.inspection.gc.ca/",
+    gazette_citation: null,
+    effective_date: "2019-01-15",
+    last_amended: "2024-01-01",
+    applies_to: ["import", "inspection", "requirements"],
+  },
+  {
+    agency_acronym: "CFIA",
+    title_en: "Preventive Control Plans (PCP) Guidance",
+    title_ko: "예방관리계획(PCP) 가이드",
+    short_name: "PCP-GUIDE",
+    statute_type: "guideline" as const,
+    official_url: "https://inspection.canada.ca/preventive-controls/",
+    gazette_citation: null,
+    effective_date: "2019-01-15",
+    last_amended: "2024-01-01",
+    applies_to: ["production", "import", "preventive_controls", "haccp"],
+  },
+
+  // ============================================
+  // ALBERTA PROVINCIAL REGULATIONS
+  // ============================================
+  {
+    agency_acronym: "AHS",
+    title_en: "Alberta Food Regulation",
+    title_ko: "알버타 식품 규정",
+    short_name: "AB-FOOD-REG",
+    statute_type: "regulation" as const,
+    official_url: "https://kings-printer.alberta.ca/documents/Regs/2006_031.pdf",
+    gazette_citation: "AR 31/2006",
+    effective_date: "2006-01-01",
+    last_amended: "2020-01-01",
+    applies_to: ["production", "facility", "provincial", "alberta"],
+  },
+  {
+    agency_acronym: "AHS",
+    title_en: "Alberta Food Retail and Foodservices Code",
+    title_ko: "알버타 식품 소매 및 식품서비스 코드",
+    short_name: "AB-FOOD-CODE",
+    statute_type: "guideline" as const,
+    official_url: "https://open.alberta.ca/dataset/0ea69179-2f90-4776-a64d-c903299b2ca6",
+    gazette_citation: null,
+    effective_date: "2020-01-01",
+    last_amended: "2020-01-01",
+    applies_to: ["production", "facility", "sanitation", "provincial", "alberta"],
+  },
+
+  // ============================================
+  // CERTIFICATION & LABELLING CLAIMS
+  // ============================================
+  {
+    agency_acronym: "CFIA",
+    title_en: "CFIA Simulated Meat/Poultry Product Guidelines",
+    title_ko: "CFIA 모조 육류/가금류 제품 가이드라인",
+    short_name: "CFIA-SIM-MEAT",
+    statute_type: "guideline" as const,
+    official_url: "https://inspection.canada.ca/en/food-labels/labelling/industry/meat-and-poultry-products/simulated-products",
+    gazette_citation: null,
+    effective_date: "2023-01-01",
+    last_amended: "2024-01-01",
+    applies_to: ["labeling", "production", "plant_based", "simulated_products"],
+  },
+  {
+    agency_acronym: "SCC",
+    title_en: "Canadian Organic Standards (CAN/CGSB-32.310 & 32.311)",
+    title_ko: "캐나다 유기 표준",
+    short_name: "COR",
+    statute_type: "standard" as const,
+    official_url: "https://inspection.canada.ca/en/food-labels/organic-products/standards",
+    gazette_citation: "CAN/CGSB-32.310-2020",
+    effective_date: "2020-01-01",
+    last_amended: "2023-01-01",
+    applies_to: ["organic", "certification", "labeling", "production"],
+  },
+  {
+    agency_acronym: "SCC",
+    title_en: "Voluntary Labelling of Non-GMO Foods (CAN/CGSB-32.315)",
+    title_ko: "Non-GMO 식품 자발적 표시 (CAN/CGSB-32.315)",
+    short_name: "NON-GMO-STD",
+    statute_type: "standard" as const,
+    official_url: "https://inspection.canada.ca/en/food-labels/labelling/consumers/genetically-engineered-foods",
+    gazette_citation: "CAN/CGSB-32.315-2004",
+    effective_date: "2004-01-01",
+    last_amended: "2016-01-01",
+    applies_to: ["non_gmo", "labeling", "voluntary_claims"],
+  },
+  {
+    agency_acronym: "CFIA",
+    title_en: "Organic Products Regulations (SFCR Part 13)",
+    title_ko: "유기 제품 규정 (SFCR 제13부)",
+    short_name: "SFCR-ORGANIC",
+    statute_type: "regulation" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2018-108/page-38.html",
+    gazette_citation: "SFCR Part 13",
+    effective_date: "2019-01-15",
+    last_amended: "2024-01-01",
+    applies_to: ["organic", "certification", "labeling", "import"],
+  },
+] as const;
