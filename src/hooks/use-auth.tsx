@@ -9,7 +9,8 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import { createClient, type User, type AuthError } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { User, AuthError } from "@supabase/supabase-js";
 
 interface AuthContextValue {
   readonly user: User | null;
@@ -27,7 +28,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function getSupabaseAuthClient() {
-  return createClient(
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
