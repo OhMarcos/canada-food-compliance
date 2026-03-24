@@ -14,6 +14,7 @@ import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-lim
 import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
 import { detectContentGap } from "@/lib/analytics/gaps";
+import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
 import type { RetrievedContext } from "@/lib/rag/retriever";
 import type { Citation } from "@/types/chat";
 
@@ -132,8 +133,18 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // Rate limit check
-    const clientId = getClientIdentifier(request);
+    // Auth + token check
+    const authResult = await requireTokens("chat-stream");
+    if (!isAuthSuccess(authResult)) {
+      return new Response(JSON.stringify({ error: "Authentication required", code: "AUTH_REQUIRED" }), {
+        status: authResult.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    const { user } = authResult;
+
+    // Rate limit check (keyed by user ID)
+    const clientId = user.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`stream:${clientId}`, RATE_LIMITS.stream);
     if (!rateCheck.allowed) {
       return new Response(
@@ -211,6 +222,9 @@ export async function POST(request: NextRequest) {
           controller.enqueue(
             encoder.encode(METADATA_DELIMITER + JSON.stringify(metadata)),
           );
+
+          // Consume tokens (fire-and-forget)
+          void consumeTokens(user.id, "chat-stream", `Stream: ${input.message.slice(0, 50)}`);
 
           // Flywheel: capture analytics (fire-and-forget)
           const bestScore = contexts.length > 0

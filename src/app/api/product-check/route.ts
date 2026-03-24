@@ -12,6 +12,7 @@ import { checkCompliance } from "@/lib/ai/compliance-checker";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
 import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
+import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
 
 export const maxDuration = 60; // Allow up to 60s for vision + RAG + compliance
 
@@ -19,8 +20,18 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // Rate limit
-    const clientId = getClientIdentifier(request);
+    // Auth + token check
+    const authResult = await requireTokens("product-check");
+    if (!isAuthSuccess(authResult)) {
+      return new Response(JSON.stringify({ error: "Authentication required", code: "AUTH_REQUIRED" }), {
+        status: authResult.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    const { user } = authResult;
+
+    // Rate limit (keyed by user ID)
+    const clientId = user.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`product-check:${clientId}`, RATE_LIMITS.productCheck);
     if (!rateCheck.allowed) {
       return new Response(
@@ -56,6 +67,9 @@ export async function POST(request: NextRequest) {
       }));
 
     const processingTime = Date.now() - startTime;
+
+    // Consume tokens (fire-and-forget)
+    void consumeTokens(user.id, "product-check", `Product check: ${extractedInfo.product_name ?? "unknown"}`);
 
     // Flywheel: capture product check analytics (fire-and-forget)
     captureEvent({

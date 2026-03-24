@@ -8,11 +8,17 @@ import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-lim
 import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
 import { detectContentGap } from "@/lib/analytics/gaps";
+import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit check
-    const clientId = getClientIdentifier(request);
+    // Auth + token check
+    const authResult = await requireTokens("chat");
+    if (!isAuthSuccess(authResult)) return authResult;
+    const { user } = authResult;
+
+    // Rate limit check (keyed by user ID)
+    const clientId = user.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`chat:${clientId}`, RATE_LIMITS.chat);
     if (!rateCheck.allowed) {
       return NextResponse.json(
@@ -97,6 +103,9 @@ export async function POST(request: NextRequest) {
       conversation_id: uuid(),
       processing_time_ms: Date.now() - startTime,
     };
+
+    // Consume tokens (fire-and-forget — already validated above)
+    void consumeTokens(user.id, "chat", `Chat: ${input.message.slice(0, 50)}`);
 
     // Flywheel: capture analytics (fire-and-forget)
     const bestScore = qaResult.contexts.length > 0

@@ -4,6 +4,7 @@ import { marketCrossCheck } from "@/lib/market/scanner";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
 import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
+import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
 
 const MarketSearchSchema = z.object({
   product_name: z.string().min(1).max(200),
@@ -14,7 +15,18 @@ const MarketSearchSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const clientId = getClientIdentifier(request);
+    // Auth + token check
+    const authResult = await requireTokens("market");
+    if (!isAuthSuccess(authResult)) {
+      return NextResponse.json(
+        { error: "Authentication required", code: "AUTH_REQUIRED" },
+        { status: authResult.status },
+      );
+    }
+    const { user } = authResult;
+
+    // Rate limit (keyed by user ID)
+    const clientId = user.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`market:${clientId}`, RATE_LIMITS.api);
     if (!rateCheck.allowed) {
       return NextResponse.json(
@@ -39,6 +51,9 @@ export async function POST(request: NextRequest) {
       originCountry: input.origin_country,
       includeWebSearch: input.include_web_search,
     });
+
+    // Consume tokens (fire-and-forget)
+    void consumeTokens(user.id, "market", `Market search: ${input.product_name}`);
 
     // Flywheel: capture market search analytics (fire-and-forget)
     captureEvent({

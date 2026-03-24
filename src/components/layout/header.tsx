@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
+import { TokenBalance } from "@/components/tokens/token-balance";
 
 const NAV_ITEMS = [
   { href: "/", label_ko: "대시보드", label_en: "Dashboard" },
@@ -81,6 +82,8 @@ export function Header() {
           </div>
 
           <div className="ml-auto flex items-center space-x-2">
+            <TokenBalance />
+
             <Button
               variant="outline"
               size="sm"
