@@ -118,8 +118,8 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   "AI 기반 컴플라이언스 도구를 사용하려면 로그인하세요.",
                 )
               : t(
-                  "Sign up to get 150 free tokens.",
-                  "가입하면 150 무료 토큰을 받으세요.",
+                  "Sign up to get 30 free tokens.",
+                  "가입하면 30 무료 토큰을 받으세요.",
                 )}
           </DialogDescription>
         </DialogHeader>

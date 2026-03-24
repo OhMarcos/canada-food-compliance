@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ClipboardCopy, RotateCcw } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 import type { ChecklistResult } from "@/lib/checklist/generator";
 
 const ACTIVITY_TYPES = [
@@ -49,6 +50,7 @@ export function ChecklistView() {
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { checkAuthError, authDialog } = useAuthGuard();
 
   // Load saved state when activity/category changes
   useEffect(() => {
@@ -104,16 +106,20 @@ export function ChecklistView() {
         }),
       });
 
-      if (response.status === 429) {
+      if (!response.ok) {
+        const authError = checkAuthError(response);
+        if (authError) throw new Error(authError);
+        if (response.status === 429) {
+          throw new Error(t(
+            "Too many requests. Please try again shortly.",
+            "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+          ));
+        }
         throw new Error(t(
-          "Too many requests. Please try again shortly.",
-          "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+          "Failed to generate checklist.",
+          "체크리스트 생성에 실패했습니다.",
         ));
       }
-      if (!response.ok) throw new Error(t(
-        "Failed to generate checklist.",
-        "체크리스트 생성에 실패했습니다.",
-      ));
 
       const data = await response.json();
       setChecklist(data);
@@ -368,6 +374,7 @@ export function ChecklistView() {
           </CardContent>
         </Card>
       )}
+      {authDialog}
     </div>
   );
 }

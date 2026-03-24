@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, ExternalLink, MessageSquare } from "lucide-react";
 import { isSafeUrl } from "@/lib/url";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 import type { MarketSearchResult } from "@/types/market";
 
 const PRODUCT_CATEGORIES = [
@@ -32,6 +33,7 @@ export function ProductSearch() {
   const [result, setResult] = useState<MarketSearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { checkAuthError, authDialog } = useAuthGuard();
 
   const search = async () => {
     if (!productName.trim()) return;
@@ -51,6 +53,8 @@ export function ProductSearch() {
       });
 
       if (!response.ok) {
+        const authError = checkAuthError(response);
+        if (authError) throw new Error(authError);
         throw new Error(t(
           `Search failed (${response.status})`,
           `검색에 실패했습니다 (${response.status})`,
@@ -307,6 +311,7 @@ export function ProductSearch() {
           )}
         </div>
       )}
+      {authDialog}
     </div>
   );
 }

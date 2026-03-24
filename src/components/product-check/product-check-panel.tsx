@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ToastContainer } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { ProductInfoCard } from "./product-info-card";
 import { ComplianceReportCard } from "./compliance-report-card";
 import { ActionChecklist } from "./action-checklist";
@@ -47,6 +48,7 @@ export function ProductCheckPanel() {
   const [result, setResult] = useState<ProductCheckResult | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const { toasts, removeToast, error: showError } = useToast();
+  const { checkAuthError, authDialog } = useAuthGuard();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const processingSteps = language === "en" ? PROCESSING_STEPS_EN : PROCESSING_STEPS_KO;
@@ -156,6 +158,8 @@ export function ProductCheckPanel() {
       clearInterval(stepInterval);
 
       if (!response.ok) {
+        const authError = checkAuthError(response);
+        if (authError) throw new Error(authError);
         if (response.status === 429) {
           throw new Error(t(
             "Too many requests. Please wait and try again.",
@@ -373,6 +377,7 @@ export function ProductCheckPanel() {
       )}
 
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      {authDialog}
     </div>
   );
 }

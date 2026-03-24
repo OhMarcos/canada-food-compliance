@@ -160,10 +160,10 @@ class TokenService {
 
     // Grant bonus tokens to both
     const [referrerOk, referredOk] = await Promise.all([
-      this.addTokens(referrer.id, 75, "referral_bonus", "Referral bonus — new user joined", {
+      this.addTokens(referrer.id, 60, "referral_bonus", "Referral bonus — new user joined", {
         referred_user: newUserId,
       }),
-      this.addTokens(newUserId, 50, "referral_bonus", `Referral bonus — code ${referrerCode}`, {
+      this.addTokens(newUserId, 60, "referral_bonus", `Referral bonus — code ${referrerCode}`, {
         referrer_code: referrerCode,
       }),
     ]);

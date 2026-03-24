@@ -15,6 +15,7 @@ import { CitationCard } from "./citation-card";
 import { ReportExport } from "./report-export";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 import type { ChatMessage } from "@/types/chat";
 import { Copy, Trash2, Clock, Send, Square } from "lucide-react";
 
@@ -139,6 +140,7 @@ export function ChatPanel() {
   const initialQuestionHandled = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toasts, removeToast, error: showError, success: showSuccess } = useToast();
+  const { checkAuthError, authDialog } = useAuthGuard();
 
   // Load messages from localStorage on mount
   useEffect(() => {
@@ -233,6 +235,8 @@ export function ChatPanel() {
       });
 
       if (!response.ok) {
+        const authError = checkAuthError(response);
+        if (authError) throw new Error(authError);
         if (response.status === 429) {
           throw new Error(t(
             "Too many requests. Please try again shortly.",
@@ -323,9 +327,13 @@ export function ChatPanel() {
       const isRateLimited = error instanceof Error && (
         error.message.includes("Too many requests") || error.message.includes("요청이 너무 많습니다")
       );
+      const isAuthError = error instanceof Error && (
+        error.message.includes("sign in") || error.message.includes("로그인") ||
+        error.message.includes("token") || error.message.includes("토큰")
+      );
 
-      // Skip fallback if rate-limited (fallback endpoint will also reject)
-      if (!isRateLimited) {
+      // Skip fallback if rate-limited or auth error (fallback endpoint will also reject)
+      if (!isRateLimited && !isAuthError) {
         try {
           const fallbackResponse = await fetch("/api/chat", {
             method: "POST",
@@ -367,6 +375,16 @@ export function ChatPanel() {
           setStreamingContent("");
           console.error("Chat error:", error);
         }
+      } else if (isAuthError) {
+        // Auth dialog already shown by checkAuthError — show inline message
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: error instanceof Error ? error.message : "",
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setStreamingContent("");
       } else {
         showError(t("Too many requests. Please try again shortly.", "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."));
         const errorMessage: Message = {
@@ -625,6 +643,7 @@ export function ChatPanel() {
 
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      {authDialog}
     </div>
   );
 }
