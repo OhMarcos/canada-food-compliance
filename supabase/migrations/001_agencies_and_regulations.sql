@@ -1,12 +1,11 @@
 -- Enable required extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "vector";
 
 -- ============================================
 -- Regulatory Agencies
 -- ============================================
 CREATE TABLE agencies (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name_en     TEXT NOT NULL,
   name_ko     TEXT NOT NULL,
   acronym     TEXT NOT NULL UNIQUE,
@@ -22,7 +21,7 @@ CREATE TABLE agencies (
 -- Regulations (Acts, Regulations, Guidelines)
 -- ============================================
 CREATE TABLE regulations (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id       UUID REFERENCES agencies(id) NOT NULL,
   title_en        TEXT NOT NULL,
   title_ko        TEXT,
@@ -42,7 +41,7 @@ CREATE TABLE regulations (
 -- Regulation Sections (hierarchical)
 -- ============================================
 CREATE TABLE regulation_sections (
-  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   regulation_id     UUID REFERENCES regulations(id) ON DELETE CASCADE NOT NULL,
   parent_section_id UUID REFERENCES regulation_sections(id) ON DELETE CASCADE,
   section_number    TEXT NOT NULL,
@@ -64,7 +63,7 @@ CREATE TABLE regulation_sections (
 -- Vector Embeddings for RAG
 -- ============================================
 CREATE TABLE regulation_chunks (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   section_id      UUID REFERENCES regulation_sections(id) ON DELETE CASCADE NOT NULL,
   chunk_text      TEXT NOT NULL,
   chunk_index     INTEGER NOT NULL,

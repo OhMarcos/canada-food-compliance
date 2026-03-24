@@ -2,7 +2,7 @@
 -- Market Products (for cross-check)
 -- ============================================
 CREATE TABLE market_products (
-  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_name      TEXT NOT NULL,
   brand             TEXT,
   category          TEXT NOT NULL,
@@ -29,7 +29,7 @@ CREATE INDEX idx_market_name_search ON market_products
 -- Compliance Checklist Templates
 -- ============================================
 CREATE TABLE checklist_templates (
-  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name_en           TEXT NOT NULL,
   name_ko           TEXT,
   description_en    TEXT,
@@ -46,7 +46,7 @@ CREATE TABLE checklist_templates (
 -- Checklist Items
 -- ============================================
 CREATE TABLE checklist_items (
-  id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   template_id           UUID REFERENCES checklist_templates(id) ON DELETE CASCADE NOT NULL,
   regulation_section_id UUID REFERENCES regulation_sections(id),
   order_index           INTEGER NOT NULL,
@@ -65,7 +65,7 @@ CREATE INDEX idx_checklist_items_template ON checklist_items(template_id);
 -- Q&A Sessions (audit trail)
 -- ============================================
 CREATE TABLE qa_sessions (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   question        TEXT NOT NULL,
   answer          TEXT NOT NULL,
   citations       JSONB NOT NULL DEFAULT '[]',
