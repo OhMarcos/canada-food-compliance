@@ -96,7 +96,7 @@ export function ProductSearch() {
               )}
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && search()}
+              onKeyDown={(e) => e.key === "Enter" && !isLoading && search()}
             />
             <Button
               onClick={search}

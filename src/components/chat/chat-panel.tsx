@@ -16,7 +16,7 @@ import { ReportExport } from "./report-export";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
 import type { ChatMessage } from "@/types/chat";
-import { Copy, Trash2, Clock, Send } from "lucide-react";
+import { Copy, Trash2, Clock, Send, Square } from "lucide-react";
 
 const STORAGE_KEY = "cfc-chat-history";
 const METADATA_DELIMITER = "\n\n---METADATA---\n";
@@ -137,6 +137,7 @@ export function ChatPanel() {
   const [loadingStep, setLoadingStep] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialQuestionHandled = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toasts, removeToast, error: showError, success: showSuccess } = useToast();
 
   // Load messages from localStorage on mount
@@ -188,8 +189,19 @@ export function ChatPanel() {
       .map((m) => ({ role: m.role, content: m.content }));
   }, [messages]);
 
+  const cancelStreaming = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsLoading(false);
+    setStreamingContent("");
+    setLoadingStep(0);
+  }, []);
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -217,6 +229,7 @@ export function ChatPanel() {
           include_market_check: false,
           history: buildHistory(),
         }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -302,6 +315,11 @@ export function ChatPanel() {
     } catch (error) {
       clearTimeout(stepTimer);
 
+      // User cancelled - do nothing
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
       const isRateLimited = error instanceof Error && (
         error.message.includes("Too many requests") || error.message.includes("요청이 너무 많습니다")
       );
@@ -364,6 +382,7 @@ export function ChatPanel() {
         setStreamingContent("");
       }
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
       setLoadingStep(0);
     }
@@ -577,17 +596,24 @@ export function ChatPanel() {
               }
             }}
           />
-          <Button
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || isLoading}
-            className="self-end"
-          >
-            {isLoading ? (
-              <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-            ) : (
+          {isLoading ? (
+            <Button
+              onClick={cancelStreaming}
+              variant="destructive"
+              className="self-end"
+              aria-label={t("Cancel", "취소")}
+            >
+              <Square className="size-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={() => sendMessage(input)}
+              disabled={!input.trim()}
+              className="self-end"
+            >
               <Send className="size-4" />
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           {t(

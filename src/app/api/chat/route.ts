@@ -5,6 +5,9 @@ import { generateAnswer } from "@/lib/ai/chat-engine";
 import { verifyAnswer } from "@/lib/ai/verifier";
 import { marketCrossCheck } from "@/lib/market/scanner";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
+import { getSessionId } from "@/lib/analytics/session";
+import { captureEvent } from "@/lib/analytics/events";
+import { detectContentGap } from "@/lib/analytics/gaps";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +29,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const input = ChatInputSchema.parse(body);
     const startTime = Date.now();
+    const sessionId = await getSessionId(request);
 
     // Step 1: Generate answer with citations
     const qaResult = await generateAnswer(input.message, {
@@ -93,6 +97,36 @@ export async function POST(request: NextRequest) {
       conversation_id: uuid(),
       processing_time_ms: Date.now() - startTime,
     };
+
+    // Flywheel: capture analytics (fire-and-forget)
+    const bestScore = qaResult.contexts.length > 0
+      ? Math.max(...qaResult.contexts.map((c) => c.score))
+      : 0;
+    const matchedTopics = [...new Set(qaResult.contexts.flatMap((c) => [...c.topics]))];
+
+    captureEvent({
+      session_id: sessionId,
+      event_type: "chat",
+      event_action: "success",
+      language: input.language,
+      processing_time_ms: response.processing_time_ms,
+      metadata: {
+        confidence: verification.overall_confidence,
+        contexts_found: qaResult.contexts.length,
+        retrieval_score: bestScore,
+        topics: matchedTopics,
+        has_market_check: !!marketCheck,
+      },
+    });
+
+    detectContentGap({
+      query: input.message,
+      language: input.language,
+      confidence: verification.overall_confidence,
+      retrievalScore: bestScore,
+      contextsFound: qaResult.contexts.length,
+      matchedTopics,
+    });
 
     return NextResponse.json(response);
   } catch (error) {

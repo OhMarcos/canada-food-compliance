@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/lib/db/client";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
+import { getSessionId } from "@/lib/analytics/session";
+import { captureEvent } from "@/lib/analytics/events";
 
 export async function GET(
   request: NextRequest,
@@ -59,6 +61,20 @@ export async function GET(
         { status: 500 },
       );
     }
+
+    // Flywheel: capture regulation view (fire-and-forget)
+    const sessionId = await getSessionId(request);
+    captureEvent({
+      session_id: sessionId,
+      event_type: "regulation_view",
+      event_action: "success",
+      metadata: {
+        regulation_id: id,
+        short_name: regulation.short_name,
+        statute_type: regulation.statute_type,
+        sections_count: sections?.length ?? 0,
+      },
+    });
 
     return NextResponse.json({
       regulation,

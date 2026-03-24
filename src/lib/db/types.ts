@@ -104,10 +104,43 @@ export interface Database {
           confidence: string;
           language: string;
           processing_time_ms: number | null;
+          session_id: string | null;
+          retrieval_score: number | null;
+          contexts_found: number | null;
+          topics_matched: string[] | null;
           created_at: string;
         };
         Insert: Omit<Database["public"]["Tables"]["qa_sessions"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["qa_sessions"]["Insert"]>;
+      };
+      analytics_events: {
+        Row: {
+          id: string;
+          session_id: string;
+          event_type: string;
+          event_action: string;
+          language: string;
+          processing_time_ms: number | null;
+          metadata: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["analytics_events"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["analytics_events"]["Insert"]>;
+      };
+      content_gap_signals: {
+        Row: {
+          id: string;
+          query: string;
+          query_language: string;
+          confidence: number | null;
+          retrieval_score: number | null;
+          contexts_found: number;
+          gap_type: string;
+          matched_topics: string[] | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["content_gap_signals"]["Row"], "id" | "created_at">;
+        Update: Partial<Database["public"]["Tables"]["content_gap_signals"]["Insert"]>;
       };
     };
   };

@@ -194,7 +194,7 @@ export function ChecklistView() {
     }
   };
 
-  const progress = checklist
+  const progress = checklist && checklist.items.length > 0
     ? (completedItems.size / checklist.items.length) * 100
     : 0;
 

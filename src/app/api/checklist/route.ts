@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getChecklist } from "@/lib/checklist/generator";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
+import { getSessionId } from "@/lib/analytics/session";
+import { captureEvent } from "@/lib/analytics/events";
 
 const ChecklistRequestSchema = z.object({
   product_category: z.string().min(1).max(100),
@@ -27,12 +29,28 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const input = ChecklistRequestSchema.parse(body);
+    const sessionId = await getSessionId(request);
+    const startTime = Date.now();
 
     const result = await getChecklist(
       input.product_category,
       input.activity_type,
       input.origin_country,
     );
+
+    // Flywheel: capture checklist analytics (fire-and-forget)
+    captureEvent({
+      session_id: sessionId,
+      event_type: "checklist",
+      event_action: "success",
+      processing_time_ms: Date.now() - startTime,
+      metadata: {
+        product_category: input.product_category,
+        activity_type: input.activity_type,
+        origin_country: input.origin_country,
+        items_count: result.items?.length ?? 0,
+      },
+    });
 
     return NextResponse.json(result);
   } catch (error) {

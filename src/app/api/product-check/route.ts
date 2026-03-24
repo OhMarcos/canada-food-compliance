@@ -10,6 +10,8 @@ import { ProductCheckInputSchema } from "@/lib/validators/product-check";
 import { extractProductInfo } from "@/lib/ai/product-analyzer";
 import { checkCompliance } from "@/lib/ai/compliance-checker";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
+import { getSessionId } from "@/lib/analytics/session";
+import { captureEvent } from "@/lib/analytics/events";
 
 export const maxDuration = 60; // Allow up to 60s for vision + RAG + compliance
 
@@ -35,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const input = ProductCheckInputSchema.parse(body);
+    const sessionId = await getSessionId(request);
 
     // Step 1: Extract product info from images
     const extractedInfo = await extractProductInfo(input.images);
@@ -52,12 +55,34 @@ export async function POST(request: NextRequest) {
         official_url: c.section_url ?? c.official_url,
       }));
 
+    const processingTime = Date.now() - startTime;
+
+    // Flywheel: capture product check analytics (fire-and-forget)
+    captureEvent({
+      session_id: sessionId,
+      event_type: "product_check",
+      event_action: "success",
+      language: input.language,
+      processing_time_ms: processingTime,
+      metadata: {
+        product_name: extractedInfo.product_name,
+        manufacturer: extractedInfo.manufacturer,
+        category: extractedInfo.product_category,
+        origin_country: extractedInfo.origin_country,
+        compliance_status: report.feasibility,
+        major_issues: report.items
+          .filter((item) => item.status === "fail")
+          .map((item) => item.requirement),
+        regulation_refs_count: regulationRefs.length,
+      },
+    });
+
     return new Response(
       JSON.stringify({
         extracted_info: extractedInfo,
         compliance_report: report,
         regulation_references: regulationRefs,
-        processing_time_ms: Date.now() - startTime,
+        processing_time_ms: processingTime,
       }),
       {
         status: 200,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/hooks/use-language";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { Header } from "@/components/layout/header";
 import "./globals.css";
 
@@ -37,12 +38,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${plusJakarta.variable} antialiased`}
       >
-        <LanguageProvider>
-          <TooltipProvider>
-            <Header />
-            <main id="main-content" className="container mx-auto py-4 px-4 md:px-6">{children}</main>
-          </TooltipProvider>
-        </LanguageProvider>
+        <ErrorBoundary>
+          <LanguageProvider>
+            <TooltipProvider>
+              <Header />
+              <main id="main-content" className="container mx-auto py-4 px-4 md:px-6">{children}</main>
+            </TooltipProvider>
+          </LanguageProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

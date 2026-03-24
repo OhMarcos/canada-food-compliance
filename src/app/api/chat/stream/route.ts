@@ -11,6 +11,9 @@ import { streamAnswer } from "@/lib/ai/chat-engine";
 import { verifyAnswer } from "@/lib/ai/verifier";
 import { marketCrossCheck } from "@/lib/market/scanner";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
+import { getSessionId } from "@/lib/analytics/session";
+import { captureEvent } from "@/lib/analytics/events";
+import { detectContentGap } from "@/lib/analytics/gaps";
 import type { RetrievedContext } from "@/lib/rag/retriever";
 import type { Citation } from "@/types/chat";
 
@@ -147,6 +150,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const input = ChatInputSchema.parse(body);
+    const sessionId = await getSessionId(request);
 
     const { stream: streamResult, contexts } = await streamAnswer(
       input.message,
@@ -207,6 +211,38 @@ export async function POST(request: NextRequest) {
           controller.enqueue(
             encoder.encode(METADATA_DELIMITER + JSON.stringify(metadata)),
           );
+
+          // Flywheel: capture analytics (fire-and-forget)
+          const bestScore = contexts.length > 0
+            ? Math.max(...contexts.map((c) => c.score))
+            : 0;
+          const matchedTopics = [...new Set(contexts.flatMap((c) => [...c.topics]))];
+
+          captureEvent({
+            session_id: sessionId,
+            event_type: "chat",
+            event_action: "success",
+            language: input.language,
+            processing_time_ms: metadata.processing_time_ms,
+            metadata: {
+              confidence: verification.overall_confidence,
+              contexts_found: contexts.length,
+              retrieval_score: bestScore,
+              topics: matchedTopics,
+              has_market_check: !!marketCheck,
+              streaming: true,
+            },
+          });
+
+          detectContentGap({
+            query: input.message,
+            language: input.language,
+            confidence: verification.overall_confidence,
+            retrievalScore: bestScore,
+            contextsFound: contexts.length,
+            matchedTopics,
+          });
+
           controller.close();
         } catch (streamError) {
           console.error("Stream processing error:", streamError);

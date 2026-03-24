@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { marketCrossCheck } from "@/lib/market/scanner";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
+import { getSessionId } from "@/lib/analytics/session";
+import { captureEvent } from "@/lib/analytics/events";
 
 const MarketSearchSchema = z.object({
   product_name: z.string().min(1).max(200),
@@ -28,12 +30,31 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const input = MarketSearchSchema.parse(body);
+    const sessionId = await getSessionId(request);
+    const startTime = Date.now();
 
     const result = await marketCrossCheck({
       productName: input.product_name,
       category: input.category,
       originCountry: input.origin_country,
       includeWebSearch: input.include_web_search,
+    });
+
+    // Flywheel: capture market search analytics (fire-and-forget)
+    captureEvent({
+      session_id: sessionId,
+      event_type: "market_search",
+      event_action: "success",
+      processing_time_ms: Date.now() - startTime,
+      metadata: {
+        query: input.product_name,
+        category: input.category,
+        origin_country: input.origin_country,
+        results_found: result.total_similar,
+        has_recalls: result.recalls.length > 0,
+        web_products_count: result.web_products.length,
+        db_products_count: result.db_products.length,
+      },
     });
 
     return NextResponse.json(result);

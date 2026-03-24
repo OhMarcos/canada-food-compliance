@@ -163,24 +163,37 @@ export default function RegulationDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
+  // Reset state on id change (render-time state adjustment)
+  const [prevId, setPrevId] = useState(id);
+  if (prevId !== id) {
+    setPrevId(id);
+    setIsLoading(true);
+    setError(null);
+    setData(null);
+  }
+
   useEffect(() => {
-    fetch(`/api/regulations/${id}`)
+    const controller = new AbortController();
+
+    fetch(`/api/regulations/${id}`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load");
         return res.json();
       })
       .then((loadedData) => {
         setData(loadedData);
-        // Auto-open first section
         if (loadedData.sections?.length > 0) {
           setOpenSections(new Set([loadedData.sections[0].id]));
         }
         setIsLoading(false);
       })
       .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err.message);
         setIsLoading(false);
       });
+
+    return () => controller.abort();
   }, [id]);
 
   if (isLoading) {
