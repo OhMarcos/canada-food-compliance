@@ -115,6 +115,54 @@ async function checkOpenAI(): Promise<CheckResult> {
   }
 }
 
+/**
+ * Test the full chat pipeline (RAG retrieval + LLM) without auth.
+ * Only available with debug param.
+ */
+async function checkChatPipeline(): Promise<CheckResult> {
+  const start = Date.now();
+  try {
+    // Step 1: Test RAG retrieval (structured search)
+    const { getSupabaseClient } = await import("@/lib/db/client");
+    const supabase = getSupabaseClient();
+    const { data: sections, error: searchError } = await supabase
+      .from("regulation_sections")
+      .select("id, section_number, title_en, content_en")
+      .textSearch("content_en", "food & labeling", { type: "websearch" })
+      .limit(3);
+
+    if (searchError) {
+      return { status: "error", message: `RAG search failed: ${searchError.message}`, latencyMs: Date.now() - start };
+    }
+
+    if (!sections || sections.length === 0) {
+      return { status: "error", message: "RAG search returned 0 results — regulation_sections may be empty", latencyMs: Date.now() - start };
+    }
+
+    // Step 2: Test LLM call via Vercel AI SDK
+    const { generateText } = await import("ai");
+    const { anthropic } = await import("@ai-sdk/anthropic");
+    const { text } = await generateText({
+      model: anthropic("claude-sonnet-4-20250514"),
+      prompt: "Reply with exactly: OK",
+      maxOutputTokens: 10,
+      temperature: 0,
+    });
+
+    if (!text.includes("OK")) {
+      return { status: "error", message: `LLM responded but unexpected: ${text.slice(0, 100)}`, latencyMs: Date.now() - start };
+    }
+
+    return {
+      status: "ok",
+      message: `RAG: ${sections.length} results, LLM: OK`,
+      latencyMs: Date.now() - start,
+    };
+  } catch (e) {
+    return { status: "error", message: e instanceof Error ? `${e.name}: ${e.message}` : "Unknown", latencyMs: Date.now() - start };
+  }
+}
+
 export async function GET(request: NextRequest) {
   // Only allow in dev or with debug param
   const isDevOrDebug =
@@ -125,12 +173,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not available in production" }, { status: 403 });
   }
 
+  const deepCheck = request.nextUrl.searchParams.get("deep") === "1";
+
   const [supabaseAnon, supabaseAdmin, anthropic, openai] = await Promise.all([
     checkSupabaseAnon(),
     checkSupabaseAdmin(),
     checkAnthropic(),
     checkOpenAI(),
   ]);
+
+  const pipeline = deepCheck ? await checkChatPipeline() : undefined;
 
   const allOk = [supabaseAnon, supabaseAdmin, anthropic].every((c) => c.status === "ok");
 
@@ -141,6 +193,7 @@ export async function GET(request: NextRequest) {
       supabase_admin: supabaseAdmin,
       anthropic,
       openai,
+      ...(pipeline ? { chat_pipeline: pipeline } : {}),
     },
     env_vars_present: {
       NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL?.trim(),
