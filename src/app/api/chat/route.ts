@@ -11,9 +11,10 @@ import { detectContentGap } from "@/lib/analytics/gaps";
 import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
 
 export async function POST(request: NextRequest) {
+  let step = "init";
   try {
     // Step 1: Auth + token check
-    let step = "auth";
+    step = "auth";
     const authResult = await requireTokens("chat");
     if (!isAuthSuccess(authResult)) return authResult;
     const { user } = authResult;

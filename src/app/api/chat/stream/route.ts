@@ -131,10 +131,11 @@ function buildMetadata(
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  let step = "init";
 
   try {
     // Step 1: Auth + token check
-    let step = "auth";
+    step = "auth";
     const authResult = await requireTokens("chat-stream");
     if (!isAuthSuccess(authResult)) {
       // Pass through the original NextResponse (preserves correct status + body)
