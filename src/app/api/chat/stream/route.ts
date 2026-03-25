@@ -292,8 +292,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorName = error instanceof Error ? error.name : "UnknownError";
+    console.error("Chat stream error details:", { name: errorName, message: errorMessage });
+
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({
+        error: "Internal server error",
+        debug: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
+      }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }

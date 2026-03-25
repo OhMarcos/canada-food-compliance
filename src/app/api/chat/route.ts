@@ -148,8 +148,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Chat error details:", { name: error instanceof Error ? error.name : "Unknown", message: errorMessage });
+
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        debug: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
+      },
       { status: 500 },
     );
   }

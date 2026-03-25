@@ -1,7 +1,10 @@
-# Vinker Foods - Comprehensive Compliance Guide
-# 빈커 식품 - 종합 컴플라이언스 가이드
+# Sample Compliance Guide — Plant-Based Food Product (Alberta)
+# 샘플 컴플라이언스 가이드 — 식물성 식품 (앨버타)
 
-> Products: Vinker Crispy Chick'n (Nuggets) + Vinker Gochujang Sauce
+> **Note**: This is a sample compliance guide used as a reference template.
+> Product names and company details are illustrative examples.
+
+> Products: Plant-based nuggets + Gochujang sauce
 > Location: Alberta, Canada (Production)
 > Raw Ingredients: Mostly imported from Korea (except canola oil)
 > Last Updated: 2026-03-12
