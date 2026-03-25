@@ -12,12 +12,14 @@ import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middlewa
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth + token check
+    // Step 1: Auth + token check
+    let step = "auth";
     const authResult = await requireTokens("chat");
     if (!isAuthSuccess(authResult)) return authResult;
     const { user } = authResult;
 
-    // Rate limit check (keyed by user ID)
+    // Step 2: Rate limit check (keyed by user ID)
+    step = "rate-limit";
     const clientId = user.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`chat:${clientId}`, RATE_LIMITS.chat);
     if (!rateCheck.allowed) {
@@ -32,12 +34,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Step 3: Parse input
+    step = "parse-input";
     const body = await request.json();
     const input = ChatInputSchema.parse(body);
     const startTime = Date.now();
     const sessionId = await getSessionId(request);
 
-    // Step 1: Generate answer with citations
+    // Step 4: Generate answer with citations
+    step = "generate-answer";
     const qaResult = await generateAnswer(input.message, {
       language: input.language,
       topics: input.product_context?.category
@@ -149,12 +154,12 @@ export async function POST(request: NextRequest) {
     }
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Chat error details:", { name: error instanceof Error ? error.name : "Unknown", message: errorMessage });
+    console.error("Chat error details:", { step, name: error instanceof Error ? error.name : "Unknown", message: errorMessage });
 
     return NextResponse.json(
       {
         error: "Internal server error",
-        debug: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
+        debug: `[${step}] ${errorMessage}`,
       },
       { status: 500 },
     );

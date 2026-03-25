@@ -133,17 +133,17 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // Auth + token check
+    // Step 1: Auth + token check
+    let step = "auth";
     const authResult = await requireTokens("chat-stream");
     if (!isAuthSuccess(authResult)) {
-      return new Response(JSON.stringify({ error: "Authentication required", code: "AUTH_REQUIRED" }), {
-        status: authResult.status,
-        headers: { "Content-Type": "application/json" },
-      });
+      // Pass through the original NextResponse (preserves correct status + body)
+      return authResult;
     }
     const { user } = authResult;
 
-    // Rate limit check (keyed by user ID)
+    // Step 2: Rate limit check (keyed by user ID)
+    step = "rate-limit";
     const clientId = user.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`stream:${clientId}`, RATE_LIMITS.stream);
     if (!rateCheck.allowed) {
@@ -159,10 +159,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Step 3: Parse input
+    step = "parse-input";
     const body = await request.json();
     const input = ChatInputSchema.parse(body);
     const sessionId = await getSessionId(request);
 
+    // Step 4: RAG retrieval + LLM streaming
+    step = "stream-answer";
     const { stream: streamResult, contexts } = await streamAnswer(
       input.message,
       {
@@ -294,12 +298,12 @@ export async function POST(request: NextRequest) {
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const errorName = error instanceof Error ? error.name : "UnknownError";
-    console.error("Chat stream error details:", { name: errorName, message: errorMessage });
+    console.error("Chat stream error details:", { step, name: errorName, message: errorMessage });
 
     return new Response(
       JSON.stringify({
         error: "Internal server error",
-        debug: process.env.NODE_ENV !== "production" ? errorMessage : undefined,
+        debug: `[${step}] ${errorMessage}`,
       }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
