@@ -7,13 +7,14 @@
 import { NextRequest } from "next/server";
 import { v4 as uuid } from "uuid";
 import { ChatInputSchema } from "@/lib/validators/chat";
-import { streamAnswer } from "@/lib/ai/chat-engine";
+import { streamAnswer, stripCitationBlock } from "@/lib/ai/chat-engine";
 import { verifyAnswer } from "@/lib/ai/verifier";
 import { marketCrossCheck } from "@/lib/market/scanner";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
 import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
 import { detectContentGap } from "@/lib/analytics/gaps";
+import { logQASession } from "@/lib/qa/logger";
 import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
 import type { RetrievedContext } from "@/lib/rag/retriever";
 import type { Citation } from "@/types/chat";
@@ -21,22 +22,30 @@ import type { Citation } from "@/types/chat";
 const METADATA_DELIMITER = "\n\n---METADATA---\n";
 
 /**
+ * Regex patterns for extracting citation JSON blocks from LLM output.
+ * Matches both fenced and bare JSON.
+ */
+const CITATION_JSON_PATTERNS: readonly RegExp[] = [
+  /```json\s*(\{[\s\S]*?"citations"[\s\S]*?\})\s*```/,
+  /(\{\s*"citations"\s*:\s*\[[\s\S]*?\]\s*\})/,
+];
+
+/**
  * Parse citations from completed streamed text.
- * Looks for JSON citation blocks embedded in the LLM response.
+ * Handles both fenced (```json) and bare JSON citation blocks.
  */
 function parseCitationsFromText(
   text: string,
   contexts: readonly RetrievedContext[],
 ): readonly Citation[] {
-  const citations: Citation[] = [];
+  for (const pattern of CITATION_JSON_PATTERNS) {
+    const jsonMatch = text.match(pattern);
+    if (!jsonMatch) continue;
 
-  const jsonMatch = text.match(
-    /```json\s*(\{[\s\S]*?"citations"[\s\S]*?\})\s*```/,
-  );
-  if (jsonMatch) {
     try {
       const parsed = JSON.parse(jsonMatch[1]);
-      if (Array.isArray(parsed.citations)) {
+      if (Array.isArray(parsed.citations) && parsed.citations.length > 0) {
+        const citations: Citation[] = [];
         for (const cite of parsed.citations) {
           const matchedContext = contexts.find(
             (c) =>
@@ -55,29 +64,26 @@ function parseCitationsFromText(
             relevance_score: matchedContext?.score ?? 0.5,
           });
         }
+        return citations;
       }
     } catch {
-      // JSON parsing failed - fall through to context-based extraction
+      // Try next pattern
     }
   }
 
   // Fallback: derive citations from high-scoring contexts
-  if (citations.length === 0) {
-    return contexts
-      .filter((c) => c.score >= 0.5)
-      .slice(0, 5)
-      .map((c) => ({
-        regulation_id: c.regulation_id,
-        section_id: c.section_id,
-        regulation_name: c.regulation_name,
-        section_number: c.section_number,
-        excerpt: c.content.slice(0, 200),
-        official_url: c.official_url,
-        relevance_score: c.score,
-      }));
-  }
-
-  return citations;
+  return contexts
+    .filter((c) => c.score >= 0.5)
+    .slice(0, 5)
+    .map((c) => ({
+      regulation_id: c.regulation_id,
+      section_id: c.section_id,
+      regulation_name: c.regulation_name,
+      section_number: c.section_number,
+      excerpt: c.content.slice(0, 200),
+      official_url: c.official_url,
+      relevance_score: c.score,
+    }));
 }
 
 /**
@@ -191,8 +197,9 @@ export async function POST(request: NextRequest) {
             controller.enqueue(encoder.encode(chunk));
           }
 
-          // Parse citations from the completed response
+          // Parse citations from the completed response, then strip JSON from answer
           const citations = parseCitationsFromText(fullText, contexts);
+          const cleanAnswer = stripCitationBlock(fullText);
 
           // Run verification + market check in parallel
           const [verification, marketCheck] = await Promise.all([
@@ -216,14 +223,11 @@ export async function POST(request: NextRequest) {
               : Promise.resolve(null),
           ]);
 
-          // Append metadata delimiter + JSON
-          const metadata = buildMetadata(
-            input,
-            verification,
-            marketCheck,
-            citations,
-            startTime,
-          );
+          // Append metadata delimiter + JSON (include clean_answer for client)
+          const metadata = {
+            ...buildMetadata(input, verification, marketCheck, citations, startTime),
+            clean_answer: cleanAnswer,
+          };
           controller.enqueue(
             encoder.encode(METADATA_DELIMITER + JSON.stringify(metadata)),
           );
@@ -260,6 +264,28 @@ export async function POST(request: NextRequest) {
             retrievalScore: bestScore,
             contextsFound: contexts.length,
             matchedTopics,
+          });
+
+          // QA monitoring: full session replay capture
+          logQASession({
+            sessionId,
+            userId: user.id,
+            question: input.message,
+            language: input.language,
+            historyTurns: input.history?.length ?? 0,
+            contextsFound: contexts.length,
+            bestRetrievalScore: bestScore,
+            matchedTopics,
+            rawAnswer: fullText,
+            cleanAnswer,
+            citations,
+            confidence: verification.overall_confidence,
+            accuracyScore: verification.llm_verification?.accuracy_score,
+            verifiedCount: verification.citation_checks.filter((c) => c.status === "verified").length,
+            flaggedCount: verification.citation_checks.filter((c) => c.status === "not_found" || c.status === "text_mismatch").length,
+            verifierNotes: verification.llm_verification?.verifier_notes,
+            processingTimeMs: metadata.processing_time_ms,
+            endpoint: "stream",
           });
 
           controller.close();

@@ -9,7 +9,9 @@
     "lint": "eslint",
     "db:seed": "npx tsx scripts/seed-database.ts",
     "db:embed": "npx tsx scripts/generate-embeddings.ts",
-    "db:setup": "npm run db:seed && npm run db:embed"
+    "db:setup": "npm run db:seed && npm run db:embed",
+    "qa:regression": "npx tsx scripts/run-regression.ts",
+    "qa:loop": "npx tsx scripts/agentic-loop.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.58",

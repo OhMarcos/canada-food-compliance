@@ -28,6 +28,7 @@ export interface QAOptions {
 
 export interface QAResult {
   readonly answer: string;
+  readonly rawAnswer: string;
   readonly citations: readonly Citation[];
   readonly contexts: readonly RetrievedContext[];
   readonly processingTimeMs: number;
@@ -56,51 +57,84 @@ function buildMessages(
 }
 
 /**
+ * Regex patterns for extracting citation JSON blocks from LLM output.
+ * Order matters: fenced blocks first, then bare JSON.
+ */
+const CITATION_JSON_PATTERNS: readonly RegExp[] = [
+  // 1. Fenced code block: ```json { "citations": [...] } ```
+  /```json\s*(\{[\s\S]*?"citations"[\s\S]*?\})\s*```/,
+  // 2. Bare JSON object with "citations" key (no code fences)
+  /(\{\s*"citations"\s*:\s*\[[\s\S]*?\]\s*\})/,
+];
+
+/**
+ * Extract the raw citation JSON string from LLM output.
+ * Returns the matched substring (for stripping) and parsed citations array.
+ */
+function extractCitationJson(text: string): { readonly match: string; readonly citations: readonly Record<string, string>[] } | null {
+  for (const pattern of CITATION_JSON_PATTERNS) {
+    const jsonMatch = text.match(pattern);
+    if (!jsonMatch) continue;
+
+    try {
+      const parsed = JSON.parse(jsonMatch[1]);
+      if (Array.isArray(parsed.citations)) {
+        return { match: jsonMatch[0], citations: parsed.citations };
+      }
+    } catch {
+      // Try next pattern
+    }
+  }
+  return null;
+}
+
+/**
+ * Strip citation JSON block from the answer text so it doesn't
+ * leak into the rendered message content.
+ */
+export function stripCitationBlock(text: string): string {
+  let cleaned = text;
+  for (const pattern of CITATION_JSON_PATTERNS) {
+    cleaned = cleaned.replace(pattern, "");
+  }
+  // Clean up leftover blank lines from removal
+  return cleaned.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/**
  * Parse citations from the LLM response text.
- * Looks for JSON citation blocks in the response.
+ * Handles both fenced (```json) and bare JSON citation blocks.
  */
 function parseCitations(
   text: string,
   contexts: readonly RetrievedContext[],
 ): readonly Citation[] {
-  const citations: Citation[] = [];
+  const extracted = extractCitationJson(text);
+  if (extracted) {
+    const citations: Citation[] = [];
+    for (const cite of extracted.citations) {
+      const matchedContext = contexts.find(
+        (c) =>
+          c.section_number === cite.section_number ||
+          c.regulation_name.includes(cite.regulation_name) ||
+          cite.regulation_name.includes(c.regulation_short_name),
+      );
 
-  // Try to extract JSON citation block
-  const jsonMatch = text.match(/```json\s*(\{[\s\S]*?"citations"[\s\S]*?\})\s*```/);
-  if (jsonMatch) {
-    try {
-      const parsed = JSON.parse(jsonMatch[1]);
-      if (Array.isArray(parsed.citations)) {
-        for (const cite of parsed.citations) {
-          const matchedContext = contexts.find(
-            (c) =>
-              c.section_number === cite.section_number ||
-              c.regulation_name.includes(cite.regulation_name) ||
-              cite.regulation_name.includes(c.regulation_short_name),
-          );
-
-          citations.push({
-            regulation_id: matchedContext?.regulation_id ?? "",
-            section_id: matchedContext?.section_id ?? "",
-            regulation_name: cite.regulation_name,
-            section_number: cite.section_number,
-            excerpt: cite.excerpt,
-            official_url: cite.official_url || matchedContext?.official_url || "",
-            relevance_score: matchedContext?.score ?? 0.5,
-          });
-        }
-      }
-    } catch {
-      // JSON parsing failed, try regex fallback
+      citations.push({
+        regulation_id: matchedContext?.regulation_id ?? "",
+        section_id: matchedContext?.section_id ?? "",
+        regulation_name: cite.regulation_name,
+        section_number: cite.section_number,
+        excerpt: cite.excerpt,
+        official_url: cite.official_url || matchedContext?.official_url || "",
+        relevance_score: matchedContext?.score ?? 0.5,
+      });
     }
+    if (citations.length > 0) return citations;
   }
 
   // Fallback: extract inline citations like [Law Name, Section]
-  if (citations.length === 0) {
-    return extractInlineCitations(text, contexts);
-  }
-
-  return citations;
+  return extractInlineCitations(text, contexts);
 }
 
 /**
@@ -168,6 +202,7 @@ export async function generateAnswer(
       section_number: c.section_number,
       regulation_name: `${c.regulation_name} (${c.regulation_short_name})`,
       official_url: c.section_url ?? c.official_url,
+      source: c.source,
     })),
     language,
   );
@@ -182,11 +217,13 @@ export async function generateAnswer(
     temperature: 0.1,
   });
 
-  // 4. Parse citations
+  // 4. Parse citations, then strip the JSON block from the visible answer
   const citations = parseCitations(text, contexts);
+  const cleanAnswer = stripCitationBlock(text);
 
   return {
-    answer: text,
+    answer: cleanAnswer,
+    rawAnswer: text,
     citations,
     contexts,
     processingTimeMs: Date.now() - startTime,
@@ -216,6 +253,7 @@ export async function streamAnswer(
       section_number: c.section_number,
       regulation_name: `${c.regulation_name} (${c.regulation_short_name})`,
       official_url: c.section_url ?? c.official_url,
+      source: c.source,
     })),
     language,
   );

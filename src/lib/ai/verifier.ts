@@ -17,6 +17,8 @@ import {
   type LLMVerification,
   type VerificationResult,
   computeConfidence,
+  computeWebAuthorityScore,
+  isOfficialWebSource,
 } from "@/types/verification";
 
 const VERIFIER_MODEL = "claude-sonnet-4-20250514";
@@ -28,12 +30,27 @@ async function verifySingleCitation(
   citation: Citation,
 ): Promise<CitationVerification> {
   if (!citation.section_id) {
+    // No DB section — check if citation comes from a trusted web source
+    const webScore = computeWebAuthorityScore(citation.official_url);
+    if (isOfficialWebSource(citation.official_url)) {
+      return {
+        citation_id: `${citation.regulation_name}_${citation.section_number}`,
+        section_id: "",
+        exists_in_db: false,
+        text_match_score: 0,
+        url_valid: true,
+        source_type: "web",
+        web_authority_score: webScore,
+        status: "web_trusted",
+      };
+    }
     return {
       citation_id: `${citation.regulation_name}_${citation.section_number}`,
       section_id: "",
       exists_in_db: false,
       text_match_score: 0,
       url_valid: null,
+      source_type: "unknown",
       status: "not_found",
     };
   }
@@ -41,12 +58,27 @@ async function verifySingleCitation(
   const section = await getSectionById(citation.section_id);
 
   if (!section) {
+    // DB lookup failed — fall back to web source check
+    const webScore = computeWebAuthorityScore(citation.official_url);
+    if (isOfficialWebSource(citation.official_url)) {
+      return {
+        citation_id: citation.section_id,
+        section_id: citation.section_id,
+        exists_in_db: false,
+        text_match_score: 0,
+        url_valid: true,
+        source_type: "web",
+        web_authority_score: webScore,
+        status: "web_trusted",
+      };
+    }
     return {
       citation_id: citation.section_id,
       section_id: citation.section_id,
       exists_in_db: false,
       text_match_score: 0,
       url_valid: null,
+      source_type: "unknown",
       status: "not_found",
     };
   }
@@ -62,6 +94,7 @@ async function verifySingleCitation(
     exists_in_db: true,
     text_match_score: textMatchScore,
     url_valid: null,
+    source_type: "db",
     status:
       textMatchScore >= 0.7
         ? "verified"
@@ -249,8 +282,9 @@ export async function verifyAnswer(
     citation_checks: citationChecks as CitationVerification[],
     llm_verification: llmVerification,
     total_citations: citations.length,
-    verified_count: citationChecks.filter((c) => c.status === "verified")
-      .length,
+    verified_count: citationChecks.filter(
+      (c) => c.status === "verified" || c.status === "web_trusted",
+    ).length,
     flagged_count: citationChecks.filter(
       (c) => c.status === "not_found" || c.status === "text_mismatch",
     ).length,

@@ -8,6 +8,7 @@ import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-lim
 import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
 import { detectContentGap } from "@/lib/analytics/gaps";
+import { logQASession } from "@/lib/qa/logger";
 import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
 
 export async function POST(request: NextRequest) {
@@ -141,6 +142,28 @@ export async function POST(request: NextRequest) {
       retrievalScore: bestScore,
       contextsFound: qaResult.contexts.length,
       matchedTopics,
+    });
+
+    // QA monitoring: full session replay capture
+    logQASession({
+      sessionId,
+      userId: user.id,
+      question: input.message,
+      language: input.language,
+      historyTurns: input.history?.length ?? 0,
+      contextsFound: qaResult.contexts.length,
+      bestRetrievalScore: bestScore,
+      matchedTopics,
+      rawAnswer: qaResult.rawAnswer,
+      cleanAnswer: qaResult.answer,
+      citations: qaResult.citations,
+      confidence: verification.overall_confidence,
+      accuracyScore: verification.llm_verification?.accuracy_score,
+      verifiedCount: verification.citation_checks.filter((c) => c.status === "verified").length,
+      flaggedCount: verification.citation_checks.filter((c) => c.status === "not_found" || c.status === "text_mismatch").length,
+      verifierNotes: verification.llm_verification?.verifier_notes,
+      processingTimeMs: response.processing_time_ms,
+      endpoint: "non-stream",
     });
 
     return NextResponse.json(response);

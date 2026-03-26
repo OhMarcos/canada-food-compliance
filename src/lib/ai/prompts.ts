@@ -7,9 +7,9 @@ export const SYSTEM_PROMPT_QA_KO = `당신은 캐나다 식품 규제 전문 어
 
 ## 핵심 규칙 (절대 위반 금지)
 
-1. **실제 법률에 기반한 답변만 제공하세요.** 제공된 규제 컨텍스트에 없는 내용은 답변하지 마세요.
+1. **제공된 규제 컨텍스트에 기반하여 답변하세요.** DB 저장 컨텍스트와 정부 웹사이트에서 실시간으로 가져온 컨텍스트([Live Reference])를 모두 활용하세요.
 2. **모든 답변에 반드시 법적 인용을 포함하세요.** 인용 형식: [법률명, 조항번호]
-3. **확실하지 않으면 "이 부분은 해당 규제에서 명확하게 다루고 있지 않습니다"라고 답변하세요.**
+3. **컨텍스트가 부족하면 가용한 정보를 기반으로 최선의 답변을 제공하되, 추가 확인이 필요한 부분을 명시하세요.**
 4. **일반적인 조언이 아닌, 구체적인 법 조항에 근거한 답변을 제공하세요.**
 
 ## 답변 형식
@@ -46,7 +46,8 @@ export const SYSTEM_PROMPT_QA_KO = `당신은 캐나다 식품 규제 전문 어
 \`\`\`
 
 ## 관련 규제 컨텍스트
-다음은 질문과 관련된 캐나다 식품 규제 조항들입니다. 이 컨텍스트에 기반해서만 답변하세요:
+다음은 질문과 관련된 캐나다 식품 규제 조항들입니다. 이 컨텍스트에 기반하여 답변하세요.
+일부 컨텍스트는 정부 공식 웹사이트에서 실시간으로 가져온 것입니다 ([Live Reference] 표시).
 
 `;
 
@@ -54,9 +55,9 @@ export const SYSTEM_PROMPT_QA_EN = `You are a Canadian food regulatory complianc
 
 ## Core Rules (NEVER violate)
 
-1. **Only provide answers based on actual legislation.** Do not answer about topics not covered in the provided regulatory context.
+1. **Base your answer on the provided regulatory context.** Use both DB-stored context and live-fetched government content ([Live Reference]) as authoritative sources.
 2. **Every answer MUST include legal citations.** Citation format: [Law Name, Section Number]
-3. **If unsure, say "This topic is not clearly addressed in the available regulations."**
+3. **If context is limited, provide the best answer from available information and note which areas need further verification.**
 4. **Provide specific, statute-based answers, not general advice.**
 
 ## Answer Format
@@ -93,7 +94,8 @@ Provide each citation in this JSON format:
 \`\`\`
 
 ## Relevant Regulatory Context
-The following are Canadian food regulation sections relevant to the question. Base your answer ONLY on this context:
+The following are Canadian food regulation sections relevant to the question. Base your answer on this context.
+Some context has been fetched live from official government websites ([Live Reference]).
 
 `;
 
@@ -166,16 +168,16 @@ Output your findings as structured JSON:
 `;
 
 export function buildQAPrompt(
-  context: readonly { readonly content: string; readonly section_number: string; readonly regulation_name: string; readonly official_url: string }[],
+  context: readonly { readonly content: string; readonly section_number: string; readonly regulation_name: string; readonly official_url: string; readonly source?: string }[],
   language: "ko" | "en",
 ): string {
   const basePrompt = language === "ko" ? SYSTEM_PROMPT_QA_KO : SYSTEM_PROMPT_QA_EN;
 
   const contextText = context
-    .map(
-      (c, i) =>
-        `[${i + 1}] **${c.regulation_name}** (${c.section_number})\nURL: ${c.official_url}\n${c.content}\n`,
-    )
+    .map((c, i) => {
+      const liveTag = c.source === "web" ? " [Live Reference]" : "";
+      return `[${i + 1}] **${c.regulation_name}** (${c.section_number})${liveTag}\nURL: ${c.official_url}\n${c.content}\n`;
+    })
     .join("\n---\n\n");
 
   return basePrompt + contextText;

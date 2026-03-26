@@ -163,6 +163,93 @@ async function checkChatPipeline(): Promise<CheckResult> {
   }
 }
 
+/**
+ * Test the web fetch pipeline: regulation routing + government page fetch.
+ */
+async function checkWebPipeline(): Promise<CheckResult & { details?: Record<string, unknown> }> {
+  const start = Date.now();
+  try {
+    // Step 1: Load regulations from DB
+    const { getSupabaseClient } = await import("@/lib/db/client");
+    const supabase = getSupabaseClient();
+    const { data: regs, error: regError } = await supabase
+      .from("regulations")
+      .select("short_name, title_en, official_url, applies_to, statute_type")
+      .eq("is_active", true);
+
+    if (regError || !regs || regs.length === 0) {
+      return {
+        status: "error",
+        message: `Failed to load regulations: ${regError?.message ?? "no data"}`,
+        latencyMs: Date.now() - start,
+        details: { step: "load_regulations" },
+      };
+    }
+
+    // Step 2: Test raw HTTP fetch to government sites (diagnose if Vercel can reach them)
+    const testUrls = [
+      "https://laws-lois.justice.gc.ca/eng/acts/S-0.4/",
+      "https://inspection.canada.ca/about-cfia/acts-and-regulations/list-of-acts-and-regulations/eng/1419029096537/1419029097256",
+    ];
+    const rawFetches = await Promise.all(
+      testUrls.map(async (url) => {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 8000);
+          const resp = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+              "User-Agent": "ClearBite/1.0 (Canadian food compliance research tool)",
+              Accept: "text/html",
+            },
+            redirect: "follow",
+          });
+          clearTimeout(timeout);
+          const body = await resp.text();
+          return { url, status: resp.status, bodyLen: body.length, redirected: resp.redirected, finalUrl: resp.url };
+        } catch (e) {
+          return { url, status: 0, bodyLen: 0, error: e instanceof Error ? e.message : "Unknown" };
+        }
+      }),
+    );
+
+    // Step 3: Test regulation router with a sample query
+    const { routeQuery } = await import("@/lib/rag/regulation-router");
+    const routes = await routeQuery("plant-based meat labeling Canada");
+
+    // Step 4: Test web fetcher on a known URL
+    const { fetchAndExtract } = await import("@/lib/rag/web-fetcher");
+    const fetchUrl = routes.length > 0
+      ? routes[0].official_url
+      : regs[0].official_url;
+    const content = await fetchAndExtract(fetchUrl as string);
+
+    return {
+      status: content.length > 100 ? "ok" : "error",
+      message: `Regs: ${regs.length}, Routes: ${routes.length}, Fetched: ${content.length} chars`,
+      latencyMs: Date.now() - start,
+      details: {
+        regulations_loaded: regs.length,
+        regulation_names: regs.map((r: { short_name: string }) => r.short_name),
+        regulation_urls: regs.map((r: { short_name: string; official_url: string }) => `${r.short_name}: ${r.official_url}`),
+        raw_fetches: rawFetches,
+        routes_found: routes.length,
+        route_details: routes,
+        fetched_url: fetchUrl,
+        fetched_chars: content.length,
+        fetched_preview: content.slice(0, 300),
+      },
+    };
+  } catch (e) {
+    return {
+      status: "error",
+      message: e instanceof Error ? `${e.name}: ${e.message}` : "Unknown",
+      latencyMs: Date.now() - start,
+      details: { step: "exception" },
+    };
+  }
+}
+
 export async function GET(request: NextRequest) {
   // Only allow in dev or with debug param
   const isDevOrDebug =
@@ -183,6 +270,7 @@ export async function GET(request: NextRequest) {
   ]);
 
   const pipeline = deepCheck ? await checkChatPipeline() : undefined;
+  const webPipeline = deepCheck ? await checkWebPipeline() : undefined;
 
   const allOk = [supabaseAnon, supabaseAdmin, anthropic].every((c) => c.status === "ok");
 
@@ -194,6 +282,7 @@ export async function GET(request: NextRequest) {
       anthropic,
       openai,
       ...(pipeline ? { chat_pipeline: pipeline } : {}),
+      ...(webPipeline ? { web_pipeline: webPipeline } : {}),
     },
     env_vars_present: {
       NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL?.trim(),

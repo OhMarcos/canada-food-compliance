@@ -1,6 +1,7 @@
 /**
- * Hybrid retriever combining structured DB queries and vector similarity search.
- * Uses Reciprocal Rank Fusion (RRF) to merge results from both sources.
+ * Hybrid retriever combining structured DB queries, vector similarity search,
+ * and on-demand web fetching from government regulation websites.
+ * Uses Reciprocal Rank Fusion (RRF) to merge results from all sources.
  * Supports query expansion for bilingual (EN/KO) search.
  */
 
@@ -8,6 +9,8 @@ import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { getSupabaseClient } from "@/lib/db/client";
 import { generateEmbedding } from "./embedder";
+import { routeQuery } from "./regulation-router";
+import { fetchAndExtract, fetchRegulationWithSubpages } from "./web-fetcher";
 import { TimeBasedCache, hashKey } from "@/lib/cache";
 
 export interface RetrievedContext {
@@ -22,7 +25,7 @@ export interface RetrievedContext {
   readonly section_url: string | null;
   readonly topics: readonly string[];
   readonly score: number;
-  readonly source: "structured" | "vector" | "fused";
+  readonly source: "structured" | "vector" | "fused" | "web";
 }
 
 interface StructuredSearchParams {
@@ -121,42 +124,60 @@ async function structuredSearch(
 }
 
 /**
- * Vector similarity search using pgvector
+ * Check whether OpenAI embeddings are available.
+ * Returns false when the key is missing so callers can skip vector search.
+ */
+function isEmbeddingAvailable(): boolean {
+  return !!process.env.OPENAI_API_KEY?.trim();
+}
+
+/**
+ * Vector similarity search using pgvector.
+ * Gracefully returns [] when embeddings are unavailable (missing or failed API key).
  */
 async function vectorSearch(
   params: VectorSearchParams,
 ): Promise<readonly RetrievedContext[]> {
-  const supabase = getSupabaseClient();
-  const limit = params.limit ?? 10;
-  const threshold = params.similarity_threshold ?? 0.5;
-
-  const { embedding } = await generateEmbedding(params.query);
-
-  const { data, error } = await supabase.rpc("match_regulation_chunks", {
-    query_embedding: embedding,
-    match_threshold: threshold,
-    match_count: limit,
-  });
-
-  if (error) {
-    console.error("Vector search error:", error);
+  if (!isEmbeddingAvailable()) {
     return [];
   }
 
-  return (data ?? []).map((row: Record<string, unknown>) => ({
-    section_id: row.section_id as string,
-    regulation_id: row.regulation_id as string,
-    regulation_name: row.regulation_name as string,
-    regulation_short_name: row.regulation_short_name as string,
-    section_number: row.section_number as string,
-    title: row.title as string,
-    content: row.content as string,
-    official_url: row.official_url as string,
-    section_url: row.section_url as string | null,
-    topics: row.topics as string[],
-    score: row.similarity as number,
-    source: "vector" as const,
-  }));
+  try {
+    const supabase = getSupabaseClient();
+    const limit = params.limit ?? 10;
+    const threshold = params.similarity_threshold ?? 0.5;
+
+    const { embedding } = await generateEmbedding(params.query);
+
+    const { data, error } = await supabase.rpc("match_regulation_chunks", {
+      query_embedding: embedding,
+      match_threshold: threshold,
+      match_count: limit,
+    });
+
+    if (error) {
+      console.error("Vector search error:", error);
+      return [];
+    }
+
+    return (data ?? []).map((row: Record<string, unknown>) => ({
+      section_id: row.section_id as string,
+      regulation_id: row.regulation_id as string,
+      regulation_name: row.regulation_name as string,
+      regulation_short_name: row.regulation_short_name as string,
+      section_number: row.section_number as string,
+      title: row.title as string,
+      content: row.content as string,
+      official_url: row.official_url as string,
+      section_url: row.section_url as string | null,
+      topics: row.topics as string[],
+      score: row.similarity as number,
+      source: "vector" as const,
+    }));
+  } catch (error) {
+    console.warn("Vector search failed, falling back to structured search only:", error instanceof Error ? error.message : error);
+    return [];
+  }
 }
 
 /**
@@ -269,9 +290,69 @@ function buildCacheKey(query: string, options: RetrieveOptions): string {
 }
 
 /**
- * Main hybrid retrieval function with caching and query expansion.
+ * On-demand web search: route query to relevant regulations,
+ * fetch their official pages, and return as RetrievedContext.
+ * Returns empty array on failure (never throws).
+ */
+async function webSearch(
+  query: string,
+): Promise<readonly RetrievedContext[]> {
+  try {
+    console.log("[retriever] Triggering on-demand web fetch...");
+
+    // Step 1: Route to relevant regulations
+    const routes = await routeQuery(query);
+    if (routes.length === 0) {
+      console.log("[retriever] No relevant regulations identified by router");
+      return [];
+    }
+
+    console.log(`[retriever] Router identified ${routes.length} regulation(s): ${routes.map((r) => r.short_name).join(", ")}`);
+
+    // Step 2: Fetch regulation pages in parallel
+    const fetchResults = await Promise.all(
+      routes.map(async (route) => {
+        console.log(`[retriever] Fetching: ${route.official_url}`);
+        const isJusticeLaws = route.official_url.includes("laws-lois.justice.gc.ca");
+        const content = isJusticeLaws
+          ? await fetchRegulationWithSubpages(route.official_url, 2)
+          : await fetchAndExtract(route.official_url);
+
+        console.log(`[retriever] Fetched ${route.short_name}: ${content.length} chars`);
+        return { route, content };
+      }),
+    );
+
+    // Step 3: Convert to RetrievedContext format
+    const results = fetchResults
+      .filter(({ content }) => content.length > 100)
+      .map(({ route, content }, index) => ({
+        section_id: `web-${route.short_name}`,
+        regulation_id: "",
+        regulation_name: route.title_en,
+        regulation_short_name: route.short_name,
+        section_number: "Full text",
+        title: route.title_en,
+        content,
+        official_url: route.official_url,
+        section_url: null,
+        topics: [] as string[],
+        score: 0.6 - index * 0.05,
+        source: "web" as const,
+      }));
+
+    console.log(`[retriever] Web fetch returned ${results.length} result(s)`);
+    return results;
+  } catch (error) {
+    console.warn("[retriever] Web search failed:", error instanceof Error ? error.message : error);
+    return [];
+  }
+}
+
+/**
+ * Main hybrid retrieval function with caching, query expansion, and web fallback.
  * Combines structured search and vector search using RRF.
- * Optionally expands queries for bilingual search.
+ * Falls back to on-demand web fetching when DB results are insufficient.
  */
 export async function retrieveContext(
   query: string,
@@ -287,13 +368,27 @@ export async function retrieveContext(
     return cached;
   }
 
-  let results: readonly RetrievedContext[];
+  // Run DB search and web fetch in parallel for best coverage.
+  // DB has limited seed data (36 sections), so web fetch supplements with live government content.
+  const dbSearchPromise = useExpansion
+    ? retrieveWithExpansion(query, options, limit)
+    : hybridSearchForQuery(query, options);
 
-  if (useExpansion) {
-    results = await retrieveWithExpansion(query, options, limit);
-  } else {
-    results = await hybridSearchForQuery(query, options);
-  }
+  const [dbResults, webResults] = await Promise.all([
+    dbSearchPromise,
+    webSearch(query),
+  ]);
+
+  console.log(`[retriever] DB results: ${dbResults.length}, Web results: ${webResults.length}`);
+
+  // Merge: guarantee web results are included by reserving slots.
+  // Take up to (limit - webSlots) from DB, then all web results, then fill remaining from DB.
+  const webSlots = Math.min(webResults.length, Math.max(3, Math.floor(limit / 2)));
+  const dbSlots = limit - webSlots;
+  const dbPrimary = dbResults.slice(0, dbSlots);
+  const dbRemaining = dbResults.slice(dbSlots);
+  const webPrimary = webResults.slice(0, webSlots);
+  const results = [...dbPrimary, ...webPrimary, ...dbRemaining].slice(0, limit);
 
   // Store in cache
   retrievalCache.set(cacheKey, results);

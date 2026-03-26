@@ -12,6 +12,7 @@ import type { ChatMessage } from "@/types/chat";
 import { Trash2 } from "lucide-react";
 
 import { STORAGE_KEY, METADATA_DELIMITER, type Message } from "./chat-constants";
+import { stripCitationJson } from "./strip-citations";
 import { MarkdownContent } from "./markdown-content";
 import { LoadingSteps } from "./loading-steps";
 import { ChatMessageList } from "./chat-message-list";
@@ -159,9 +160,10 @@ export function ChatPanel() {
 
         const delimiterIndex = fullText.indexOf(METADATA_DELIMITER);
         if (delimiterIndex === -1) {
-          setStreamingContent(fullText);
+          // Strip citation JSON during streaming so raw JSON doesn't flash
+          setStreamingContent(stripCitationJson(fullText));
         } else {
-          setStreamingContent(fullText.slice(0, delimiterIndex));
+          setStreamingContent(stripCitationJson(fullText.slice(0, delimiterIndex)));
           setLoadingStep(2);
         }
       }
@@ -169,7 +171,7 @@ export function ChatPanel() {
       clearTimeout(stepTimer);
 
       const delimiterIndex = fullText.indexOf(METADATA_DELIMITER);
-      const answerText =
+      const rawAnswerText =
         delimiterIndex >= 0 ? fullText.slice(0, delimiterIndex) : fullText;
       const metadataJson =
         delimiterIndex >= 0
@@ -178,10 +180,16 @@ export function ChatPanel() {
 
       let chatMessage: ChatMessage | undefined;
       let processingTime: number | undefined;
+      // Use server-stripped answer if available, otherwise strip client-side
+      let answerText = stripCitationJson(rawAnswerText);
 
       if (metadataJson) {
         try {
           const metadata = JSON.parse(metadataJson);
+          // Prefer server-side clean answer (more reliable stripping)
+          if (metadata.clean_answer) {
+            answerText = metadata.clean_answer;
+          }
           chatMessage = {
             id: metadata.message_id ?? Date.now().toString(),
             role: "assistant",
