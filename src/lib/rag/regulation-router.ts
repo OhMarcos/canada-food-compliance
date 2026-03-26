@@ -24,6 +24,7 @@ interface RegulationMeta {
   readonly official_url: string;
   readonly applies_to: readonly string[];
   readonly statute_type: string;
+  readonly product_domain: string;
 }
 
 /** Cache for the regulation list (rarely changes) */
@@ -42,7 +43,7 @@ async function loadRegulations(): Promise<readonly RegulationMeta[]> {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("regulations")
-    .select("short_name, title_en, official_url, applies_to, statute_type")
+    .select("short_name, title_en, official_url, applies_to, statute_type, product_domain")
     .eq("is_active", true)
     .order("title_en");
 
@@ -57,6 +58,7 @@ async function loadRegulations(): Promise<readonly RegulationMeta[]> {
     official_url: r.official_url as string,
     applies_to: r.applies_to as string[],
     statute_type: r.statute_type as string,
+    product_domain: (r.product_domain as string) ?? "food",
   }));
 
   regListCache.set("all", results);
@@ -74,21 +76,26 @@ export async function routeQuery(query: string): Promise<readonly RegulationRout
     if (regulations.length === 0) return [];
 
     const regList = regulations
-      .map((r) => `- ${r.short_name}: ${r.title_en} [${r.statute_type}] (topics: ${r.applies_to.join(", ")})`)
+      .map((r) => `- ${r.short_name}: ${r.title_en} [${r.statute_type}] [domain: ${r.product_domain}] (topics: ${r.applies_to.join(", ")})`)
       .join("\n");
 
     console.log(`[router] Loaded ${regulations.length} regulations, routing query: "${query.slice(0, 80)}"`);
 
     const { text } = await generateText({
       model: anthropic(ROUTER_MODEL),
-      system: `You are a Canadian food regulation routing assistant. Given a user question and a list of available regulations, identify which 1-3 regulations are most likely to contain the answer.
+      system: `You are a Canadian regulatory routing assistant for both Food and Natural Health Product (NHP) regulations. Given a user question and a list of available regulations, identify which 1-3 regulations are most likely to contain the answer.
+
+Each regulation has a domain tag: [domain: food], [domain: nhp], or [domain: both].
+- Food questions → prefer food/both domain regulations
+- NHP/supplement questions → prefer nhp/both domain regulations
+- Questions spanning both → include regulations from both domains
 
 Output ONLY a JSON array. Each item must have: short_name, reason (brief, 1 sentence).
 
 Example output:
 [{"short_name": "SFCR", "reason": "Covers food labeling requirements for all products sold in Canada"}]
 
-IMPORTANT: Always pick at least 1 regulation. Only output an empty array if the question is completely unrelated to food.`,
+IMPORTANT: Always pick at least 1 regulation. Only output an empty array if the question is completely unrelated to food or health products.`,
       prompt: `Question: ${query}
 
 Available regulations:

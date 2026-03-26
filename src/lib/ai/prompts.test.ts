@@ -17,7 +17,7 @@ describe("buildQAPrompt", () => {
     },
   ] as const;
 
-  it("builds Korean prompt with context", () => {
+  it("builds Korean prompt with context (food domain)", () => {
     const result = buildQAPrompt(sampleContext, "ko");
     expect(result).toContain("캐나다 식품 규제 전문 어드바이저");
     expect(result).toContain("Safe Food for Canadians Act");
@@ -25,7 +25,7 @@ describe("buildQAPrompt", () => {
     expect(result).toContain("Section 5");
   });
 
-  it("builds English prompt with context", () => {
+  it("builds English prompt with context (food domain)", () => {
     const result = buildQAPrompt(sampleContext, "en");
     expect(result).toContain("Canadian food regulatory compliance advisor");
     expect(result).toContain("Safe Food for Canadians Act");
@@ -50,7 +50,45 @@ describe("buildQAPrompt", () => {
   it("handles empty context", () => {
     const result = buildQAPrompt([], "en");
     expect(result).toContain("Canadian food regulatory compliance advisor");
-    // Should still have the base prompt even with no context
+  });
+});
+
+describe("buildQAPrompt — NHP domain", () => {
+  const nhpContext = [
+    {
+      content: "No person shall sell a natural health product unless authorized.",
+      section_number: "s.5",
+      regulation_name: "Natural Health Products Regulations",
+      official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2003-196/",
+    },
+  ] as const;
+
+  it("builds Korean NHP prompt", () => {
+    const result = buildQAPrompt(nhpContext, "ko", "nhp");
+    expect(result).toContain("천연건강제품");
+    expect(result).toContain("NHPR");
+    expect(result).toContain("NPN");
+    expect(result).toContain("Product Facts");
+  });
+
+  it("builds English NHP prompt", () => {
+    const result = buildQAPrompt(nhpContext, "en", "nhp");
+    expect(result).toContain("Natural Health Products (NHP)");
+    expect(result).toContain("NNHPD");
+    expect(result).toContain("Product Facts");
+  });
+
+  it("builds 'both' domain prompt with classification guidance", () => {
+    const result = buildQAPrompt(nhpContext, "ko", "both");
+    expect(result).toContain("치료적 건강 주장");
+    expect(result).toContain("식품과 NHP");
+  });
+
+  it("NHP prompt does NOT reference SFCA/CFIA as primary", () => {
+    const result = buildQAPrompt(nhpContext, "en", "nhp");
+    // NHP preamble should reference NNHPD, not CFIA
+    expect(result).toContain("NNHPD");
+    expect(result).not.toContain("CFIA (Canadian Food Inspection Agency)");
   });
 });
 
@@ -69,5 +107,10 @@ describe("prompt constants", () => {
     expect(SYSTEM_PROMPT_VERIFIER).toContain("Citation Accuracy");
     expect(SYSTEM_PROMPT_VERIFIER).toContain("Overclaims");
     expect(SYSTEM_PROMPT_VERIFIER).toContain("is_accurate");
+  });
+
+  it("SYSTEM_PROMPT_VERIFIER includes domain verification", () => {
+    expect(SYSTEM_PROMPT_VERIFIER).toContain("Domain Accuracy");
+    expect(SYSTEM_PROMPT_VERIFIER).toContain("wrong_domain");
   });
 });

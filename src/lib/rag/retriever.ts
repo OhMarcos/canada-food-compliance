@@ -11,6 +11,7 @@ import { getSupabaseClient } from "@/lib/db/client";
 import { generateEmbedding } from "./embedder";
 import { routeQuery } from "./regulation-router";
 import { fetchAndExtract, fetchRegulationWithSubpages } from "./web-fetcher";
+import { classifyDomain, type ProductDomain } from "./domain-classifier";
 import { TimeBasedCache, hashKey } from "@/lib/cache";
 
 export interface RetrievedContext {
@@ -26,6 +27,7 @@ export interface RetrievedContext {
   readonly topics: readonly string[];
   readonly score: number;
   readonly source: "structured" | "vector" | "fused" | "web";
+  readonly product_domain?: ProductDomain;
 }
 
 interface StructuredSearchParams {
@@ -33,12 +35,14 @@ interface StructuredSearchParams {
   readonly topics?: readonly string[];
   readonly applies_to?: readonly string[];
   readonly limit?: number;
+  readonly productDomain?: ProductDomain;
 }
 
 interface VectorSearchParams {
   readonly query: string;
   readonly limit?: number;
   readonly similarity_threshold?: number;
+  readonly productDomain?: ProductDomain;
 }
 
 interface RetrieveOptions {
@@ -47,6 +51,7 @@ interface RetrieveOptions {
   readonly limit?: number;
   readonly useVectorSearch?: boolean;
   readonly useQueryExpansion?: boolean;
+  readonly productDomain?: ProductDomain;
 }
 
 const RRF_K = 60; // RRF constant
@@ -77,17 +82,24 @@ async function structuredSearch(
       content_en,
       section_url,
       topics,
+      product_domain,
       regulations!inner (
         id,
         title_en,
         short_name,
-        official_url
+        official_url,
+        product_domain
       )
     `)
     .textSearch("content_en", params.query.split(" ").join(" & "), {
       type: "websearch",
     })
     .limit(limit);
+
+  // Filter by product domain when specified
+  if (params.productDomain && params.productDomain !== "both") {
+    query = query.or(`product_domain.eq.${params.productDomain},product_domain.eq.both`, { referencedTable: "regulations" });
+  }
 
   if (params.topics && params.topics.length > 0) {
     query = query.overlaps("topics", [...params.topics]);
@@ -153,6 +165,7 @@ async function vectorSearch(
       query_embedding: embedding,
       match_threshold: threshold,
       match_count: limit,
+      domain_filter: params.productDomain === "both" ? null : (params.productDomain ?? null),
     });
 
     if (error) {
@@ -261,9 +274,10 @@ async function hybridSearchForQuery(
       topics: options.topics,
       applies_to: options.applies_to,
       limit: limit * 2,
+      productDomain: options.productDomain,
     }),
     useVector
-      ? vectorSearch({ query, limit: limit * 2 })
+      ? vectorSearch({ query, limit: limit * 2, productDomain: options.productDomain })
       : Promise.resolve([] as readonly RetrievedContext[]),
   ]);
 
@@ -285,6 +299,7 @@ function buildCacheKey(query: string, options: RetrieveOptions): string {
     String(options.limit ?? 10),
     String(options.useVectorSearch ?? true),
     String(options.useQueryExpansion ?? true),
+    options.productDomain ?? "auto",
   ];
   return hashKey(keyParts.join("|"));
 }
@@ -296,6 +311,7 @@ function buildCacheKey(query: string, options: RetrieveOptions): string {
  */
 async function webSearch(
   query: string,
+  domain?: ProductDomain,
 ): Promise<readonly RetrievedContext[]> {
   try {
     console.log("[retriever] Triggering on-demand web fetch...");
@@ -361,22 +377,29 @@ export async function retrieveContext(
   const limit = options.limit ?? 10;
   const useExpansion = options.useQueryExpansion ?? true;
 
+  // Auto-classify domain if not explicitly provided
+  const domainClassification = options.productDomain
+    ? { domain: options.productDomain, confidence: "high" as const, reason: "explicit" }
+    : await classifyDomain(query);
+  const resolvedOptions = { ...options, productDomain: domainClassification.domain };
+
+  console.log(`[retriever] Domain: ${domainClassification.domain} (${domainClassification.confidence})`);
+
   // Check cache first
-  const cacheKey = buildCacheKey(query, options);
+  const cacheKey = buildCacheKey(query, resolvedOptions);
   const cached = retrievalCache.get(cacheKey);
   if (cached) {
     return cached;
   }
 
   // Run DB search and web fetch in parallel for best coverage.
-  // DB has limited seed data (36 sections), so web fetch supplements with live government content.
   const dbSearchPromise = useExpansion
-    ? retrieveWithExpansion(query, options, limit)
-    : hybridSearchForQuery(query, options);
+    ? retrieveWithExpansion(query, resolvedOptions, limit)
+    : hybridSearchForQuery(query, resolvedOptions);
 
   const [dbResults, webResults] = await Promise.all([
     dbSearchPromise,
-    webSearch(query),
+    webSearch(query, domainClassification.domain),
   ]);
 
   console.log(`[retriever] DB results: ${dbResults.length}, Web results: ${webResults.length}`);

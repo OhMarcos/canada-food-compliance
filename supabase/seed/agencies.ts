@@ -1,8 +1,9 @@
 /**
- * Canadian Food Regulatory Agencies - Seed Data
+ * Canadian Regulatory Agencies - Seed Data
  *
- * These are the actual regulatory bodies involved in food production,
- * import, and sale in Canada, with specific focus on Korea-to-Canada imports.
+ * Covers both Food and Natural Health Product (NHP) regulatory bodies.
+ * Food: CFIA, HC, CBSA, CB, MC, etc.
+ * NHP: NNHPD, MHPD, HPFBI (all under Health Canada)
  */
 
 export const AGENCIES = [
@@ -94,6 +95,46 @@ export const AGENCIES = [
     description_ko:
       "알버타 주의 보건 당국입니다. 환경공중보건부를 통해 알버타 내 식품 시설에 식품 취급 허가를 발급합니다. 4-6개월마다 정기 점검을 실시합니다.",
   },
+  // ============================================
+  // NHP-SPECIFIC AGENCIES (under Health Canada)
+  // ============================================
+  {
+    name_en: "Natural and Non-prescription Health Products Directorate",
+    name_ko: "천연 및 비처방 건강제품국",
+    acronym: "NNHPD",
+    website_url: "https://www.canada.ca/en/health-canada/corporate/about-health-canada/branches-agencies/health-products-food-branch/natural-non-prescription-health-products-directorate.html",
+    jurisdiction: "federal",
+    description_en:
+      "Primary regulator for Natural Health Products (NHPs) in Canada. Issues product licences (NPN/DIN-HM), site licences, oversees GMP compliance, and manages the Compendium of Monographs. Operates under Health Canada's Health Products and Food Branch.",
+    description_ko:
+      "캐나다 천연건강제품(NHP)의 주요 규제 기관. 제품 라이선스(NPN/DIN-HM) 발급, 시설 라이선스, GMP 준수 감독, 모노그래프 편람 관리를 담당합니다. Health Canada 산하 건강제품식품분과 소속.",
+  },
+  {
+    name_en: "Marketed Health Products Directorate",
+    name_ko: "시판 건강제품국",
+    acronym: "MHPD",
+    website_url: "https://www.canada.ca/en/health-canada/corporate/about-health-canada/branches-agencies/health-products-food-branch/marketed-health-products-directorate.html",
+    jurisdiction: "federal",
+    description_en:
+      "Responsible for post-market surveillance of NHPs and other health products. Monitors adverse reactions through Canada Vigilance Program, issues safety alerts and risk communications, and coordinates recalls when necessary.",
+    description_ko:
+      "NHP 및 기타 건강제품의 시판 후 안전성 감시를 담당합니다. Canada Vigilance 프로그램을 통해 부작용을 모니터링하고, 안전 경고 및 리스크 커뮤니케이션을 발행하며, 필요시 리콜을 조정합니다.",
+  },
+  {
+    name_en: "Health Products and Food Branch Inspectorate",
+    name_ko: "건강제품식품분과 감사국",
+    acronym: "HPFBI",
+    website_url: "https://www.canada.ca/en/health-canada/corporate/about-health-canada/branches-agencies/health-products-food-branch/inspectorate.html",
+    jurisdiction: "federal",
+    description_en:
+      "Enforcement arm for NHP regulations. Conducts inspections of NHP manufacturing sites, issues compliance actions (Direction to Stop Sale, licence suspensions), investigates complaints, and manages product seizures at the border in cooperation with CBSA.",
+    description_ko:
+      "NHP 규정의 집행 기관. NHP 제조 시설 검사, 컴플라이언스 조치(판매 중지 명령, 라이선스 정지) 발행, 불만 조사, CBSA와 협력한 국경 제품 압류를 담당합니다.",
+  },
+
+  // ============================================
+  // EXISTING AGENCIES (continued)
+  // ============================================
   {
     name_en: "Standards Council of Canada",
     name_ko: "캐나다 표준위원회",

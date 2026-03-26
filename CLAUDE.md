@@ -2,7 +2,12 @@
 
 ## Project Overview
 
-ClearBite is a bilingual (EN/KO) web application for navigating Canadian food compliance regulations. It provides AI-powered Q&A with legal citations, product label analysis via vision AI, compliance checklists, and market cross-checks. Target users are food producers and importers operating in Canada.
+ClearBite is a bilingual (EN/KO) web application for navigating Canadian food AND natural health product (NHP) compliance regulations. It provides AI-powered Q&A with legal citations, product label analysis via vision AI, compliance checklists, and market cross-checks. Target users are food producers, NHP manufacturers, and importers operating in Canada.
+
+### Product Domains (CRITICAL DISTINCTION)
+- **Food**: Regulated by CFIA under SFCA/SFCR. Nutrition Facts table. No pre-market licence required.
+- **NHP (Natural Health Products)**: Regulated by Health Canada NNHPD under NHPR (SOR/2003-196). Product Facts table. NPN licence required before sale. Site licence required for manufacturing/importing. NHP-specific GMP mandatory.
+- **Boundary**: Therapeutic health claims = NHP. No therapeutic claims = Food. A product cannot be both.
 
 - **Domain**: clearbite.ca (planned)
 - **Status**: Deployed on Vercel (private, not publicly promoted)
@@ -134,12 +139,28 @@ npx vitest               # Run tests
 ## Migrations
 
 Migrations are in `supabase/migrations/` with sequential numbering.
-Note: Numbers 008-011 were skipped during development. Next migration should use 013+.
+Note: Numbers 008-011 were skipped during development. Next migration should use 023+.
+
+## Product Domain Architecture
+
+The system distinguishes Food vs NHP at every layer:
+
+| Layer | Mechanism |
+|-------|-----------|
+| Database | `product_domain` column on `regulations` and `regulation_sections` (`food`, `nhp`, `both`) |
+| Query Classification | `domain-classifier.ts` — LLM (Haiku) + keyword fallback classifies each user query |
+| RAG Retrieval | Domain-filtered structured search + domain-aware vector search |
+| AI Prompts | Separate preambles per domain (Food/NHP/Both) with domain-specific legal framework references |
+| Regulation Router | Domain-tagged regulation list for routing queries to correct laws |
+| Verification | Domain accuracy check added to verifier pipeline |
+
+Key NHP regulations: NHPR (SOR/2003-196), GMP Guide (GUI-0158), Site Licensing, NHP Labelling, Compendium of Monographs
+Key NHP agencies: NNHPD, MHPD, HPFBI (all under Health Canada)
 
 ## Roadmap
 
 1. **Stripe integration** — Real payment for token packages
-2. **Regulation data expansion** — Canadian NHP (natural health products), then US FDA
+2. **Regulation data expansion** — US FDA (food + supplements)
 3. **Document auto-generation** — Compliance labels, declaration forms (lower priority)
 4. No B2B SaaS/multi-tenant plans currently
 

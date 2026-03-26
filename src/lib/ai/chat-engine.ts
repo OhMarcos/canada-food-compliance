@@ -9,6 +9,7 @@ import type { ModelMessage } from "@ai-sdk/provider-utils";
 import { anthropic } from "@ai-sdk/anthropic";
 import { buildQAPrompt } from "./prompts";
 import { retrieveContext, type RetrievedContext } from "@/lib/rag/retriever";
+import { classifyDomain, type ProductDomain, type DomainClassification } from "@/lib/rag/domain-classifier";
 import type { Citation } from "@/types/chat";
 
 const MODEL = "claude-sonnet-4-20250514";
@@ -32,6 +33,7 @@ export interface QAResult {
   readonly citations: readonly Citation[];
   readonly contexts: readonly RetrievedContext[];
   readonly processingTimeMs: number;
+  readonly domainClassification: DomainClassification;
 }
 
 /**
@@ -238,14 +240,18 @@ export async function generateAnswer(
   const startTime = Date.now();
   const language = options.language ?? "ko";
 
-  // 1. Retrieve relevant regulation context
+  // 0. Classify domain (food vs nhp vs both)
+  const domainClassification = await classifyDomain(question);
+
+  // 1. Retrieve relevant regulation context (domain-aware)
   const contexts = await retrieveContext(question, {
     topics: options.topics,
     applies_to: options.applies_to,
     limit: 10,
+    productDomain: domainClassification.domain,
   });
 
-  // 2. Build system prompt with context
+  // 2. Build system prompt with context (domain-aware)
   const systemPrompt = buildQAPrompt(
     contexts.map((c) => ({
       content: c.content,
@@ -255,6 +261,7 @@ export async function generateAnswer(
       source: c.source,
     })),
     language,
+    domainClassification.domain,
   );
 
   // 3. Generate answer with Claude (using messages for history support)
@@ -277,6 +284,7 @@ export async function generateAnswer(
     citations,
     contexts,
     processingTimeMs: Date.now() - startTime,
+    domainClassification,
   };
 }
 
@@ -289,14 +297,18 @@ export async function streamAnswer(
 ) {
   const language = options.language ?? "ko";
 
-  // 1. Retrieve relevant regulation context
+  // 0. Classify domain (food vs nhp vs both)
+  const domainClassification = await classifyDomain(question);
+
+  // 1. Retrieve relevant regulation context (domain-aware)
   const contexts = await retrieveContext(question, {
     topics: options.topics,
     applies_to: options.applies_to,
     limit: 10,
+    productDomain: domainClassification.domain,
   });
 
-  // 2. Build system prompt with context
+  // 2. Build system prompt with context (domain-aware)
   const systemPrompt = buildQAPrompt(
     contexts.map((c) => ({
       content: c.content,
@@ -306,6 +318,7 @@ export async function streamAnswer(
       source: c.source,
     })),
     language,
+    domainClassification.domain,
   );
 
   // 3. Stream answer with Claude (using messages for history support)
@@ -318,5 +331,5 @@ export async function streamAnswer(
     temperature: 0.1,
   });
 
-  return { stream: result, contexts };
+  return { stream: result, contexts, domainClassification };
 }

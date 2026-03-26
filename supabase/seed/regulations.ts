@@ -1,14 +1,14 @@
 /**
- * Canadian Food Regulations - Seed Data
+ * Canadian Regulations - Seed Data
  *
- * Actual laws, regulations, and guidelines governing food production
- * and import in Canada. Each entry references real legislation with
- * official URLs to the Justice Laws website.
+ * Covers both Food and Natural Health Product (NHP) regulations.
+ * Each entry has a product_domain field: 'food', 'nhp', or 'both'.
+ * Official URLs reference the Justice Laws website or Health Canada.
  */
 
 export const REGULATIONS = [
   // ============================================
-  // PRIMARY ACTS
+  // PRIMARY FOOD ACTS
   // ============================================
   {
     agency_acronym: "CFIA",
@@ -16,6 +16,7 @@ export const REGULATIONS = [
     title_ko: "캐나다 안전식품법",
     short_name: "SFCA",
     statute_type: "act" as const,
+    product_domain: "food" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/acts/S-1.1/",
     gazette_citation: "S.C. 2012, c. 24",
     effective_date: "2019-01-15",
@@ -28,18 +29,24 @@ export const REGULATIONS = [
     title_ko: "캐나다 안전식품 규정",
     short_name: "SFCR",
     statute_type: "regulation" as const,
+    product_domain: "food" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2018-108/",
     gazette_citation: "SOR/2018-108",
     effective_date: "2019-01-15",
     last_amended: "2024-01-01",
     applies_to: ["production", "import", "export", "licensing", "labeling", "traceability", "preventive_controls"],
   },
+
+  // ============================================
+  // SHARED ACTS (Food + NHP)
+  // ============================================
   {
     agency_acronym: "HC",
     title_en: "Food and Drugs Act",
     title_ko: "식품의약품법",
     short_name: "FDA",
     statute_type: "act" as const,
+    product_domain: "both" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/acts/f-27/",
     gazette_citation: "R.S.C., 1985, c. F-27",
     effective_date: "1985-01-01",
@@ -52,6 +59,7 @@ export const REGULATIONS = [
     title_ko: "식품의약품 규정",
     short_name: "FDR",
     statute_type: "regulation" as const,
+    product_domain: "both" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._870/",
     gazette_citation: "C.R.C., c. 870",
     effective_date: "1978-01-01",
@@ -64,6 +72,7 @@ export const REGULATIONS = [
     title_ko: "소비자 포장 및 라벨링법",
     short_name: "CPLA",
     statute_type: "act" as const,
+    product_domain: "both" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/acts/c-38/",
     gazette_citation: "R.S.C., 1985, c. C-38",
     effective_date: "1985-01-01",
@@ -76,6 +85,7 @@ export const REGULATIONS = [
     title_ko: "소비자 포장 및 라벨링 규정",
     short_name: "CPLR",
     statute_type: "regulation" as const,
+    product_domain: "both" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._417/",
     gazette_citation: "C.R.C., c. 417",
     effective_date: "1978-01-01",
@@ -84,7 +94,7 @@ export const REGULATIONS = [
   },
 
   // ============================================
-  // IMPORT-SPECIFIC REGULATIONS
+  // IMPORT-SPECIFIC REGULATIONS (shared)
   // ============================================
   {
     agency_acronym: "CBSA",
@@ -92,6 +102,7 @@ export const REGULATIONS = [
     title_ko: "관세법",
     short_name: "CTA",
     statute_type: "act" as const,
+    product_domain: "both" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/acts/c-54.011/",
     gazette_citation: "S.C. 1997, c. 36",
     effective_date: "1998-01-01",
@@ -104,6 +115,7 @@ export const REGULATIONS = [
     title_ko: "한-캐 자유무역협정 이행법",
     short_name: "CKFTA",
     statute_type: "act" as const,
+    product_domain: "both" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/acts/C-1.65/",
     gazette_citation: "S.C. 2014, c. 28",
     effective_date: "2015-01-01",
@@ -112,26 +124,153 @@ export const REGULATIONS = [
   },
 
   // ============================================
-  // ADDITIONAL FOOD SAFETY REGULATIONS
+  // NHP PRIMARY REGULATIONS
   // ============================================
   {
-    agency_acronym: "HC",
+    agency_acronym: "NNHPD",
     title_en: "Natural Health Products Regulations",
     title_ko: "천연건강제품 규정",
     short_name: "NHPR",
     statute_type: "regulation" as const,
+    product_domain: "nhp" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2003-196/",
     gazette_citation: "SOR/2003-196",
     effective_date: "2004-01-01",
-    last_amended: "2024-01-01",
-    applies_to: ["production", "import", "labeling", "health_claims", "natural_health_products"],
+    last_amended: "2025-06-21",
+    applies_to: ["production", "import", "labeling", "health_claims", "licensing", "gmp", "natural_health_products"],
   },
+  {
+    agency_acronym: "NNHPD",
+    title_en: "Natural Health Products (Unprocessed Product Licence Applications) Regulations",
+    title_ko: "천연건강제품 (비가공 제품 라이선스 신청) 규정",
+    short_name: "NHPR-UNPROCESSED",
+    statute_type: "regulation" as const,
+    product_domain: "nhp" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2010-171/",
+    gazette_citation: "SOR/2010-171",
+    effective_date: "2010-01-01",
+    last_amended: "2018-01-01",
+    applies_to: ["licensing", "unprocessed", "natural_health_products"],
+  },
+  {
+    agency_acronym: "NNHPD",
+    title_en: "Order Establishing Supplementary Rules — Ephedrine/Pseudoephedrine NHPs",
+    title_ko: "에페드린/슈도에페드린 NHP 보충 규칙 명령",
+    short_name: "NHP-EPHEDRINE",
+    statute_type: "regulation" as const,
+    product_domain: "nhp" as const,
+    official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2025-93/",
+    gazette_citation: "SOR/2025-93",
+    effective_date: "2025-01-01",
+    last_amended: "2025-01-01",
+    applies_to: ["restricted_substances", "ephedrine", "natural_health_products"],
+  },
+
+  // ============================================
+  // NHP GUIDANCE DOCUMENTS
+  // ============================================
+  {
+    agency_acronym: "NNHPD",
+    title_en: "Good Manufacturing Practices Guide for NHPs (GUI-0158)",
+    title_ko: "NHP 우수제조관리기준(GMP) 가이드 (GUI-0158)",
+    short_name: "NHP-GMP-GUIDE",
+    statute_type: "guideline" as const,
+    product_domain: "nhp" as const,
+    official_url: "https://www.canada.ca/en/health-canada/services/drugs-health-products/compliance-enforcement/good-manufacturing-practices/guidance-documents/guide-natural-health-products-0158.html",
+    gazette_citation: "GUI-0158 v4",
+    effective_date: "2026-03-04",
+    last_amended: "2026-03-04",
+    applies_to: ["gmp", "production", "quality_assurance", "natural_health_products"],
+  },
+  {
+    agency_acronym: "NNHPD",
+    title_en: "NHP Site Licensing Guidance Document",
+    title_ko: "NHP 시설 라이선스 가이드",
+    short_name: "NHP-SITE-GUIDE",
+    statute_type: "guideline" as const,
+    product_domain: "nhp" as const,
+    official_url: "https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription/legislation-guidelines/guidance-documents/site-licensing-guidance-document.html",
+    gazette_citation: null,
+    effective_date: "2004-01-01",
+    last_amended: "2025-01-01",
+    applies_to: ["licensing", "site_licence", "production", "import", "natural_health_products"],
+  },
+  {
+    agency_acronym: "NNHPD",
+    title_en: "NHP Compendium of Monographs",
+    title_ko: "NHP 모노그래프 편람",
+    short_name: "NHP-MONOGRAPHS",
+    statute_type: "guideline" as const,
+    product_domain: "nhp" as const,
+    official_url: "https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription/applications-submissions/product-licensing/compendium-monographs.html",
+    gazette_citation: null,
+    effective_date: "2004-01-01",
+    last_amended: "2025-01-01",
+    applies_to: ["licensing", "health_claims", "monographs", "evidence", "natural_health_products"],
+  },
+  {
+    agency_acronym: "NNHPD",
+    title_en: "NHP Labelling Requirements Guidance",
+    title_ko: "NHP 라벨링 요건 가이드",
+    short_name: "NHP-LABEL-GUIDE",
+    statute_type: "guideline" as const,
+    product_domain: "nhp" as const,
+    official_url: "https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription/legislation-guidelines/guidance-documents/labelling.html",
+    gazette_citation: null,
+    effective_date: "2004-01-01",
+    last_amended: "2025-01-01",
+    applies_to: ["labeling", "packaging", "natural_health_products"],
+  },
+  {
+    agency_acronym: "HC",
+    title_en: "Classification of Products at the Food-NHP Interface",
+    title_ko: "식품-NHP 경계 제품 분류 가이드",
+    short_name: "FOOD-NHP-INTERFACE",
+    statute_type: "guideline" as const,
+    product_domain: "both" as const,
+    official_url: "https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription/legislation-guidelines/guidance-documents/classification-products-at-food-natural-health-product-interface.html",
+    gazette_citation: null,
+    effective_date: "2010-01-01",
+    last_amended: "2024-01-01",
+    applies_to: ["classification", "food_nhp_boundary", "health_claims", "functional_foods"],
+  },
+  {
+    agency_acronym: "MHPD",
+    title_en: "Reporting Adverse Reactions to Marketed Health Products",
+    title_ko: "시판 건강제품 부작용 보고 가이드",
+    short_name: "NHP-ADVERSE-GUIDE",
+    statute_type: "guideline" as const,
+    product_domain: "nhp" as const,
+    official_url: "https://www.canada.ca/en/health-canada/services/drugs-health-products/reports-publications/medeffect-canada/reporting-adverse-reactions-marketed-health-products-guidance-industry.html",
+    gazette_citation: null,
+    effective_date: "2015-01-01",
+    last_amended: "2025-01-01",
+    applies_to: ["adverse_reactions", "post_market", "surveillance", "natural_health_products"],
+  },
+  {
+    agency_acronym: "HPFBI",
+    title_en: "Health Products Import/Export Requirements",
+    title_ko: "건강제품 수입/수출 요건",
+    short_name: "NHP-IMPORT-GUIDE",
+    statute_type: "guideline" as const,
+    product_domain: "nhp" as const,
+    official_url: "https://www.canada.ca/en/health-canada/services/drugs-health-products/compliance-enforcement/importation-exportation/commercial-use-health-products-guidance/document.html",
+    gazette_citation: null,
+    effective_date: "2010-01-01",
+    last_amended: "2025-01-01",
+    applies_to: ["import", "export", "border", "natural_health_products"],
+  },
+
+  // ============================================
+  // FOOD-ONLY REGULATIONS (continued)
+  // ============================================
   {
     agency_acronym: "HC",
     title_en: "Novel Foods Regulations (Division 28 of FDR)",
     title_ko: "신규 식품 규정 (FDR 제28부)",
     short_name: "NFR",
     statute_type: "regulation" as const,
+    product_domain: "food" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._870/page-176.html",
     gazette_citation: "Part of C.R.C., c. 870, Division 28",
     effective_date: "1999-10-01",
@@ -144,6 +283,7 @@ export const REGULATIONS = [
     title_ko: "도량형법",
     short_name: "WMA",
     statute_type: "act" as const,
+    product_domain: "both" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/acts/w-6/",
     gazette_citation: "R.S.C., 1985, c. W-6",
     effective_date: "1985-01-01",
@@ -152,7 +292,7 @@ export const REGULATIONS = [
   },
 
   // ============================================
-  // CFIA GUIDANCE DOCUMENTS
+  // CFIA GUIDANCE DOCUMENTS (food-only)
   // ============================================
   {
     agency_acronym: "CFIA",
@@ -160,6 +300,7 @@ export const REGULATIONS = [
     title_ko: "CFIA 식품 라벨링 요건 가이드",
     short_name: "CFIA-LABEL-GUIDE",
     statute_type: "guideline" as const,
+    product_domain: "food" as const,
     official_url: "https://inspection.canada.ca/food-labels/labelling/industry/",
     gazette_citation: null,
     effective_date: "2019-01-15",
@@ -172,6 +313,7 @@ export const REGULATIONS = [
     title_ko: "자동 수입 참조 시스템 (AIRS)",
     short_name: "AIRS",
     statute_type: "guideline" as const,
+    product_domain: "food" as const,
     official_url: "https://airs-sari.inspection.gc.ca/",
     gazette_citation: null,
     effective_date: "2019-01-15",
@@ -184,6 +326,7 @@ export const REGULATIONS = [
     title_ko: "예방관리계획(PCP) 가이드",
     short_name: "PCP-GUIDE",
     statute_type: "guideline" as const,
+    product_domain: "food" as const,
     official_url: "https://inspection.canada.ca/preventive-controls/",
     gazette_citation: null,
     effective_date: "2019-01-15",
@@ -192,7 +335,7 @@ export const REGULATIONS = [
   },
 
   // ============================================
-  // ALBERTA PROVINCIAL REGULATIONS
+  // ALBERTA PROVINCIAL REGULATIONS (food-only)
   // ============================================
   {
     agency_acronym: "AHS",
@@ -200,6 +343,7 @@ export const REGULATIONS = [
     title_ko: "알버타 식품 규정",
     short_name: "AB-FOOD-REG",
     statute_type: "regulation" as const,
+    product_domain: "food" as const,
     official_url: "https://kings-printer.alberta.ca/documents/Regs/2006_031.pdf",
     gazette_citation: "AR 31/2006",
     effective_date: "2006-01-01",
@@ -212,6 +356,7 @@ export const REGULATIONS = [
     title_ko: "알버타 식품 소매 및 식품서비스 코드",
     short_name: "AB-FOOD-CODE",
     statute_type: "guideline" as const,
+    product_domain: "food" as const,
     official_url: "https://open.alberta.ca/dataset/0ea69179-2f90-4776-a64d-c903299b2ca6",
     gazette_citation: null,
     effective_date: "2020-01-01",
@@ -220,7 +365,7 @@ export const REGULATIONS = [
   },
 
   // ============================================
-  // CERTIFICATION & LABELLING CLAIMS
+  // CERTIFICATION & LABELLING CLAIMS (food-only)
   // ============================================
   {
     agency_acronym: "CFIA",
@@ -228,6 +373,7 @@ export const REGULATIONS = [
     title_ko: "CFIA 모조 육류/가금류 제품 가이드라인",
     short_name: "CFIA-SIM-MEAT",
     statute_type: "guideline" as const,
+    product_domain: "food" as const,
     official_url: "https://inspection.canada.ca/en/food-labels/labelling/industry/meat-and-poultry-products/simulated-products",
     gazette_citation: null,
     effective_date: "2023-01-01",
@@ -240,6 +386,7 @@ export const REGULATIONS = [
     title_ko: "캐나다 유기 표준",
     short_name: "COR",
     statute_type: "standard" as const,
+    product_domain: "food" as const,
     official_url: "https://inspection.canada.ca/en/food-labels/organic-products/standards",
     gazette_citation: "CAN/CGSB-32.310-2020",
     effective_date: "2020-01-01",
@@ -252,6 +399,7 @@ export const REGULATIONS = [
     title_ko: "Non-GMO 식품 자발적 표시 (CAN/CGSB-32.315)",
     short_name: "NON-GMO-STD",
     statute_type: "standard" as const,
+    product_domain: "food" as const,
     official_url: "https://inspection.canada.ca/en/food-labels/labelling/consumers/genetically-engineered-foods",
     gazette_citation: "CAN/CGSB-32.315-2004",
     effective_date: "2004-01-01",
@@ -264,6 +412,7 @@ export const REGULATIONS = [
     title_ko: "유기 제품 규정 (SFCR 제13부)",
     short_name: "SFCR-ORGANIC",
     statute_type: "regulation" as const,
+    product_domain: "food" as const,
     official_url: "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2018-108/page-38.html",
     gazette_citation: "SFCR Part 13",
     effective_date: "2019-01-15",

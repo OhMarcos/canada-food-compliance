@@ -17,6 +17,7 @@ import { createClient } from "@supabase/supabase-js";
 import { AGENCIES } from "../supabase/seed/agencies";
 import { REGULATIONS } from "../supabase/seed/regulations";
 import { REGULATION_SECTIONS } from "../supabase/seed/sections";
+import { NHP_REGULATION_SECTIONS } from "../supabase/seed/sections-nhp";
 import * as dotenv from "dotenv";
 import * as path from "path";
 
@@ -92,6 +93,7 @@ async function seedRegulations() {
           effective_date: reg.effective_date,
           last_amended: reg.last_amended,
           applies_to: [...reg.applies_to],
+          product_domain: reg.product_domain,
           is_active: true,
         },
         { onConflict: "short_name" },
@@ -117,7 +119,9 @@ async function seedSections() {
     (regulations ?? []).map((r: { id: string; short_name: string }) => [r.short_name, r.id]),
   );
 
-  for (const section of REGULATION_SECTIONS) {
+  const allSections = [...REGULATION_SECTIONS, ...NHP_REGULATION_SECTIONS];
+
+  for (const section of allSections) {
     const regulationId = regMap.get(section.regulation_short_name);
     if (!regulationId) {
       console.error(`  ! Regulation not found: ${section.regulation_short_name}`);
@@ -166,7 +170,8 @@ async function main() {
   console.log("\n=== Seeding complete! ===");
   console.log(`  Agencies: ${AGENCIES.length}`);
   console.log(`  Regulations: ${REGULATIONS.length}`);
-  console.log(`  Sections: ${REGULATION_SECTIONS.length}`);
+  console.log(`  Sections (Food): ${REGULATION_SECTIONS.length}`);
+  console.log(`  Sections (NHP): ${NHP_REGULATION_SECTIONS.length}`);
   console.log("\nNext steps:");
   console.log("  1. Run 'npx tsx scripts/generate-embeddings.ts' to create vector embeddings");
   console.log("  2. Run 'npm run dev' to start the application");
