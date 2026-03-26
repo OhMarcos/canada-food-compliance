@@ -91,14 +91,64 @@ function extractCitationJson(text: string): { readonly match: string; readonly c
 /**
  * Strip citation JSON block from the answer text so it doesn't
  * leak into the rendered message content.
+ * Uses bracket counting to handle nested JSON reliably.
  */
 export function stripCitationBlock(text: string): string {
-  let cleaned = text;
+  // First try regex for simple cases
   for (const pattern of CITATION_JSON_PATTERNS) {
-    cleaned = cleaned.replace(pattern, "");
+    const match = text.match(pattern);
+    if (match) {
+      try {
+        JSON.parse(match[1]); // Verify it's valid JSON
+        return text.replace(match[0], "").replace(/\n{3,}/g, "\n\n").trim();
+      } catch {
+        // Regex matched incomplete JSON; fall through to bracket counting
+      }
+    }
   }
-  // Clean up leftover blank lines from removal
-  return cleaned.replace(/\n{3,}/g, "\n\n").trim();
+
+  // Bracket-counting fallback for complex/nested JSON
+  const citIdx = text.indexOf('"citations"');
+  if (citIdx === -1) return text;
+
+  // Walk backward to find opening `{`
+  let start = -1;
+  for (let i = citIdx - 1; i >= 0; i--) {
+    const ch = text[i];
+    if (ch === "{") { start = i; break; }
+    if (ch !== " " && ch !== "\n" && ch !== "\r" && ch !== "\t" && ch !== "`") break;
+  }
+  // Check for fenced block
+  const fenceIdx = text.lastIndexOf("```", citIdx);
+  if (fenceIdx !== -1 && fenceIdx >= (start === -1 ? 0 : start) - 10) {
+    start = fenceIdx;
+  }
+  if (start === -1) start = citIdx;
+
+  // Count brackets to find matching close
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (esc) { esc = false; continue; }
+    if (ch === "\\") { esc = true; continue; }
+    if (ch === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (ch === "{" || ch === "[") depth++;
+    if (ch === "}" || ch === "]") {
+      depth--;
+      if (depth === 0) {
+        let end = i + 1;
+        const rest = text.slice(end).trimStart();
+        if (rest.startsWith("```")) end = text.indexOf("```", end) + 3;
+        return (text.slice(0, start) + text.slice(end)).replace(/\n{3,}/g, "\n\n").trim();
+      }
+    }
+  }
+
+  // Incomplete — strip from start to end
+  return text.slice(0, start).replace(/\n{3,}/g, "\n\n").trim();
 }
 
 /**
