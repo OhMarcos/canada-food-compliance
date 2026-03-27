@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,8 @@ import {
   TrendingUp,
   ArrowRight,
   Building2,
+  Apple,
+  Leaf,
 } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 
@@ -79,7 +82,7 @@ const STATS = [
   },
 ] as const;
 
-const KEY_REGULATIONS = [
+const FOOD_REGULATIONS = [
   {
     name: "SFCA",
     full: "Safe Food for Canadians Act",
@@ -118,7 +121,40 @@ const KEY_REGULATIONS = [
   },
 ] as const;
 
-const AGENCIES = [
+const NHP_REGULATIONS = [
+  {
+    name: "NHPR",
+    full: "Natural Health Products Regulations (SOR/2003-196)",
+    desc_en: "NPN licensing, site licensing, GMP, labelling",
+    desc_ko: "천연건강제품 규정 - NPN 허가, 사이트 라이선스, GMP, 라벨링",
+  },
+  {
+    name: "GMP",
+    full: "NHP GMP Guide (GUI-0158)",
+    desc_en: "Manufacturing standards, quality control, stability testing",
+    desc_ko: "NHP 제조기준 - 제조 표준, 품질 관리, 안정성 시험",
+  },
+  {
+    name: "NHPL",
+    full: "NHP Labelling Guidance",
+    desc_en: "Product Facts table, dosage, cautions, claims",
+    desc_ko: "NHP 라벨링 가이드 - Product Facts 표, 용량, 주의사항, 효능 표시",
+  },
+  {
+    name: "Monographs",
+    full: "Compendium of Monographs",
+    desc_en: "Pre-approved ingredients, claims, dosage ranges",
+    desc_ko: "모노그래프 - 사전 승인 원료, 효능 표시, 용량 범위",
+  },
+  {
+    name: "FNHP",
+    full: "Food–NHP Classification Guidance",
+    desc_en: "Boundary products, therapeutic claims, domain rules",
+    desc_ko: "식품-NHP 분류 기준 - 경계 제품, 치료적 표현, 도메인 규칙",
+  },
+] as const;
+
+const FOOD_AGENCIES = [
   {
     acronym: "CFIA",
     name_en: "Canadian Food Inspection Agency",
@@ -142,8 +178,33 @@ const AGENCIES = [
   },
 ] as const;
 
+const NHP_AGENCIES = [
+  {
+    acronym: "NNHPD",
+    name_en: "Natural & Non-prescription Health Products Directorate",
+    name_ko: "천연·비처방 건강제품국",
+    role_en: "NPN licensing, monograph reviews, product classification",
+    role_ko: "NPN 허가, 모노그래프 심사, 제품 분류",
+  },
+  {
+    acronym: "HPFBI",
+    name_en: "Health Products & Food Branch Inspectorate",
+    name_ko: "건강제품·식품 감사국",
+    role_en: "GMP inspections, site licensing, enforcement",
+    role_ko: "GMP 검사, 사이트 라이선스, 집행·시정",
+  },
+  {
+    acronym: "MHPD",
+    name_en: "Marketed Health Products Directorate",
+    name_ko: "시판 건강제품국",
+    role_en: "Adverse reaction monitoring, post-market surveillance",
+    role_ko: "부작용 모니터링, 시판 후 감시",
+  },
+] as const;
+
 export default function DashboardPage() {
   const { t } = useLanguage();
+  const [regTab, setRegTab] = useState<"food" | "nhp">("food");
 
   return (
     <div className="space-y-12">
@@ -273,50 +334,82 @@ export default function DashboardPage() {
       </Card>
 
       {/* Key Regulations & Agencies */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Scale className="size-4 text-primary" />
-              {t("Key Laws & Regulations", "핵심 법률 및 규정")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {KEY_REGULATIONS.map((reg) => (
-              <div key={reg.name} className="flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                <Badge variant="outline" className="mt-0.5 whitespace-nowrap">
-                  {reg.name}
-                </Badge>
-                <div>
-                  <p className="text-sm font-medium">{t(reg.desc_en, reg.desc_ko)}</p>
-                  <p className="text-xs text-muted-foreground">{reg.full}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      <div className="space-y-4">
+        {/* Domain Tabs */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setRegTab("food")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              regTab === "food"
+                ? "bg-primary text-white"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            <Apple className="size-4" />
+            {t("Food", "식품")}
+          </button>
+          <button
+            onClick={() => setRegTab("nhp")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              regTab === "nhp"
+                ? "bg-accent text-white"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            <Leaf className="size-4" />
+            {t("NHP", "NHP (천연건강제품)")}
+          </button>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Building2 className="size-4 text-primary" />
-              {t("Regulatory Agencies", "관련 규제 기관")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {AGENCIES.map((agency) => (
-              <div key={agency.acronym} className="flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                <Badge variant="outline" className="mt-0.5 whitespace-nowrap">
-                  {agency.acronym}
-                </Badge>
-                <div>
-                  <p className="text-sm font-medium">{t(agency.name_en, agency.name_ko)}</p>
-                  <p className="text-xs text-muted-foreground">{t(agency.role_en, agency.role_ko)}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Scale className={`size-4 ${regTab === "food" ? "text-primary" : "text-accent"}`} />
+                {regTab === "food"
+                  ? t("Food Laws & Regulations", "식품 법률 및 규정")
+                  : t("NHP Laws & Regulations", "NHP 법률 및 규정")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {(regTab === "food" ? FOOD_REGULATIONS : NHP_REGULATIONS).map((reg) => (
+                <div key={reg.name} className="flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <Badge variant="outline" className={`mt-0.5 whitespace-nowrap ${regTab === "nhp" ? "border-accent/50 text-accent" : ""}`}>
+                    {reg.name}
+                  </Badge>
+                  <div>
+                    <p className="text-sm font-medium">{t(reg.desc_en, reg.desc_ko)}</p>
+                    <p className="text-xs text-muted-foreground">{reg.full}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className={`size-4 ${regTab === "food" ? "text-primary" : "text-accent"}`} />
+                {regTab === "food"
+                  ? t("Food Regulatory Agencies", "식품 규제 기관")
+                  : t("NHP Regulatory Agencies", "NHP 규제 기관")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {(regTab === "food" ? FOOD_AGENCIES : NHP_AGENCIES).map((agency) => (
+                <div key={agency.acronym} className="flex items-start gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <Badge variant="outline" className={`mt-0.5 whitespace-nowrap ${regTab === "nhp" ? "border-accent/50 text-accent" : ""}`}>
+                    {agency.acronym}
+                  </Badge>
+                  <div>
+                    <p className="text-sm font-medium">{t(agency.name_en, agency.name_ko)}</p>
+                    <p className="text-xs text-muted-foreground">{t(agency.role_en, agency.role_ko)}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

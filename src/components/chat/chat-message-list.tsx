@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Copy } from "lucide-react";
 import { VerificationBadge } from "./verification-badge";
 import { CitationCard } from "./citation-card";
-import { ReportExport } from "./report-export";
+
 import { MarkdownContent } from "./markdown-content";
 import { CrossDomainAlert } from "./cross-domain-alert";
 import type { Message } from "./chat-constants";
@@ -116,26 +116,17 @@ function AssistantMessage({
                 key={i}
                 citation={citation}
                 index={i}
-                isVerified={message.chatMessage?.verification?.verified_citations?.includes(
-                  citation.section_id,
-                )}
+                isVerified={
+                  message.chatMessage?.verification?.verified_citations?.includes(
+                    citation.section_id,
+                  ) ||
+                  message.chatMessage?.verification?.verified_citations?.includes(
+                    `${citation.regulation_name}_${citation.section_number}`,
+                  )
+                }
               />
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Report Export */}
-      {message.chatMessage && (
-        <div className="flex items-center gap-2">
-          <ReportExport
-            question={
-              (messageIndex > 0 && messages[messageIndex - 1]?.role === "user"
-                ? messages[messageIndex - 1].content
-                : undefined) ?? message.content
-            }
-            chatMessage={message.chatMessage}
-          />
         </div>
       )}
 

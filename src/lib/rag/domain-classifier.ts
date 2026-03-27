@@ -183,6 +183,25 @@ const BOUNDARY_PATTERNS: readonly RegExp[] = [
   /\bmeal\s+replacement\b/i,
   /\bsports\s+nutrition\b/i,
   /\bfood[- ]nhp\s+(?:boundary|interface|distinction)\b/i,
+  // Edge case: selling without NPN, pending licence
+  /\b(?:sell|selling|sold)\b.*\b(?:without|before|pending)\b.*\b(?:npn|licen[cs]e|approval)\b/i,
+  /npn.*(?:신청|심사|대기|pending)/i,
+  // Edge case: private label / contract manufacturing
+  /\bprivate\s+label\b/i,
+  /\bcontract\s+manufactur/i,
+  /\bwhite\s+label\b/i,
+  /위탁.*제조|OEM/i,
+  // Edge case: cross-border e-commerce
+  /\b(?:online|e-?commerce|cross.?border)\b.*\b(?:nhp|supplement|sell|canada)\b/i,
+  /해외.*직접.*판매|직구.*nhp|온라인.*판매.*캐나다/i,
+  // Edge case: probiotic beverages, collagen drinks
+  /\bprobiotic\s+(?:drink|beverage|water|juice)\b/i,
+  /\bcollagen\s+(?:drink|beverage|water)\b/i,
+  /프로바이오틱스?\s*음료|콜라겐\s*음료/i,
+  // Edge case: CBD / cannabis
+  /\bcbd\b/i,
+  /\bcannabis\b/i,
+  /\bhemp\s+(?:extract|oil)\b/i,
 ];
 
 // ============================================

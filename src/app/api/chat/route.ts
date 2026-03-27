@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
           confidence: verification.overall_confidence,
           notes: verification.llm_verification?.verifier_notes,
           verified_citations: verification.citation_checks
-            .filter((c) => c.status === "verified")
-            .map((c) => c.section_id),
+            .filter((c) => c.status === "verified" || c.status === "web_trusted")
+            .map((c) => c.section_id || c.citation_id),
           flagged_citations: verification.citation_checks
             .filter((c) => c.status === "not_found" || c.status === "text_mismatch")
             .map((c) => c.section_id),
