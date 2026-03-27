@@ -27,6 +27,11 @@ export interface QAOptions {
   readonly history?: readonly ConversationTurn[];
 }
 
+export interface CrossDomainRecommendation {
+  readonly suggestedDomain: ProductDomain;
+  readonly reason: string;
+}
+
 export interface QAResult {
   readonly answer: string;
   readonly rawAnswer: string;
@@ -34,6 +39,7 @@ export interface QAResult {
   readonly contexts: readonly RetrievedContext[];
   readonly processingTimeMs: number;
   readonly domainClassification: DomainClassification;
+  readonly crossDomainRecommendation?: CrossDomainRecommendation;
 }
 
 /**
@@ -151,6 +157,53 @@ export function stripCitationBlock(text: string): string {
 
   // Incomplete — strip from start to end
   return text.slice(0, start).replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/**
+ * Extract cross-domain recommendation from LLM response.
+ * Looks for ---DOMAIN_ALERT_START--- / ---DOMAIN_ALERT_END--- delimiters.
+ */
+function extractCrossDomainAlert(
+  text: string,
+  currentDomain: ProductDomain,
+): CrossDomainRecommendation | undefined {
+  const startMarker = "---DOMAIN_ALERT_START---";
+  const endMarker = "---DOMAIN_ALERT_END---";
+
+  const startIdx = text.indexOf(startMarker);
+  const endIdx = text.indexOf(endMarker);
+
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return undefined;
+
+  const alertText = text
+    .slice(startIdx + startMarker.length, endIdx)
+    .trim();
+
+  if (!alertText) return undefined;
+
+  const suggestedDomain: ProductDomain = currentDomain === "food" ? "nhp" : "food";
+
+  return {
+    suggestedDomain,
+    reason: alertText,
+  };
+}
+
+/**
+ * Strip cross-domain alert delimiters from the answer text.
+ */
+export function stripDomainAlert(text: string): string {
+  const startMarker = "---DOMAIN_ALERT_START---";
+  const endMarker = "---DOMAIN_ALERT_END---";
+
+  const startIdx = text.indexOf(startMarker);
+  const endIdx = text.indexOf(endMarker);
+
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return text;
+
+  return (text.slice(0, startIdx) + text.slice(endIdx + endMarker.length))
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 /**
@@ -274,9 +327,13 @@ export async function generateAnswer(
     temperature: 0.1,
   });
 
-  // 4. Parse citations, then strip the JSON block from the visible answer
+  // 4. Extract cross-domain recommendation before stripping
+  const crossDomainRecommendation = extractCrossDomainAlert(text, domainClassification.domain);
+
+  // 5. Parse citations, then strip JSON block and domain alert from visible answer
   const citations = parseCitations(text, contexts);
-  const cleanAnswer = stripCitationBlock(text);
+  const withoutAlert = stripDomainAlert(text);
+  const cleanAnswer = stripCitationBlock(withoutAlert);
 
   return {
     answer: cleanAnswer,
@@ -285,6 +342,7 @@ export async function generateAnswer(
     contexts,
     processingTimeMs: Date.now() - startTime,
     domainClassification,
+    crossDomainRecommendation,
   };
 }
 
