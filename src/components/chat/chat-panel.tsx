@@ -11,7 +11,8 @@ import { useAuthGuard } from "@/hooks/use-auth-guard";
 import type { ChatMessage } from "@/types/chat";
 import { Trash2 } from "lucide-react";
 
-import { STORAGE_KEY, METADATA_DELIMITER, type Message } from "./chat-constants";
+import { STORAGE_KEY_FOOD, STORAGE_KEY_NHP, METADATA_DELIMITER, type Message } from "./chat-constants";
+import type { ProductDomain } from "@/lib/rag/domain-classifier";
 import { stripCitationJson } from "./strip-citations";
 import { MarkdownContent } from "./markdown-content";
 import { LoadingSteps } from "./loading-steps";
@@ -19,8 +20,9 @@ import { ChatMessageList } from "./chat-message-list";
 import { ChatInput } from "./chat-input";
 import { SuggestedQuestions } from "./suggested-questions";
 
-export function ChatPanel() {
+export function ChatPanel({ domain = "food" }: { readonly domain?: ProductDomain }) {
   const searchParams = useSearchParams();
+  const storageKey = domain === "nhp" ? STORAGE_KEY_NHP : STORAGE_KEY_FOOD;
   const { language, t } = useLanguage();
   const [messages, setMessages] = useState<readonly Message[]>([]);
   const [input, setInput] = useState("");
@@ -36,7 +38,7 @@ export function ChatPanel() {
   // Load messages from localStorage on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved) as readonly Message[];
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -63,7 +65,7 @@ export function ChatPanel() {
     if (messages.length > 0) {
       try {
         const toStore = messages.slice(-30);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+        localStorage.setItem(storageKey, JSON.stringify(toStore));
       } catch {
         // localStorage full or unavailable
       }
@@ -307,7 +309,7 @@ export function ChatPanel() {
     setMessages([]);
     setStreamingContent("");
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(storageKey);
     } catch {
       // ignore
     }
@@ -346,6 +348,7 @@ export function ChatPanel() {
             language={language}
             t={t}
             onSelect={sendMessage}
+            domain={domain}
           />
         )}
 

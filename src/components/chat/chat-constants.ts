@@ -1,5 +1,8 @@
 import type { ChatMessage } from "@/types/chat";
 
+export const STORAGE_KEY_FOOD = "cfc-chat-history-food";
+export const STORAGE_KEY_NHP = "cfc-chat-history-nhp";
+/** @deprecated Use domain-specific keys */
 export const STORAGE_KEY = "cfc-chat-history";
 export const METADATA_DELIMITER = "\n\n---METADATA---\n";
 
@@ -12,7 +15,7 @@ export interface Message {
   readonly processingTimeMs?: number;
 }
 
-export const SUGGESTED_QUESTIONS = [
+export const SUGGESTED_QUESTIONS_FOOD = [
   {
     ko: "캐나다에 식품을 수입하려면 어떤 라이선스가 필요한가요?",
     en: "What license do I need to import food into Canada?",
@@ -36,6 +39,36 @@ export const SUGGESTED_QUESTIONS = [
   {
     ko: "캐나다 영양성분표(Nutrition Facts Table) 규격은 어떻게 되나요?",
     en: "What are the Canadian Nutrition Facts Table format requirements?",
+  },
+] as const;
+
+/** @deprecated Use domain-specific questions */
+export const SUGGESTED_QUESTIONS = SUGGESTED_QUESTIONS_FOOD;
+
+export const SUGGESTED_QUESTIONS_NHP = [
+  {
+    ko: "캐나다에서 비타민 보충제를 판매하려면 어떤 라이선스가 필요한가요?",
+    en: "What licence do I need to sell vitamin supplements in Canada?",
+  },
+  {
+    ko: "NPN(천연건강제품 번호) 신청 절차는 어떻게 되나요?",
+    en: "What is the NPN application process?",
+  },
+  {
+    ko: "NHP 제조를 위한 GMP(우수제조관리기준) 요건은?",
+    en: "What are the GMP requirements for NHP manufacturing?",
+  },
+  {
+    ko: "NHP 라벨의 Product Facts 표 작성 규정은?",
+    en: "What are the Product Facts table requirements for NHP labels?",
+  },
+  {
+    ko: "프로바이오틱스 제품의 건강 주장 허용 범위는?",
+    en: "What health claims are allowed for probiotic NHP products?",
+  },
+  {
+    ko: "NHP 부작용 보고 의무는 어떻게 되나요?",
+    en: "What are the adverse reaction reporting requirements for NHPs?",
   },
 ] as const;
 
