@@ -114,3 +114,33 @@ describe("prompt constants", () => {
     expect(SYSTEM_PROMPT_VERIFIER).toContain("wrong_domain");
   });
 });
+
+describe("cross-domain prompt instructions", () => {
+  it("food prompt contains cross-domain NHP guidance (Korean)", () => {
+    const result = buildQAPrompt([], "ko", "food");
+    expect(result).toContain("DOMAIN_ALERT_START");
+    expect(result).toContain("DOMAIN_ALERT_END");
+    expect(result).toContain("NHP");
+  });
+
+  it("food prompt contains cross-domain NHP guidance (English)", () => {
+    const result = buildQAPrompt([], "en", "food");
+    expect(result).toContain("DOMAIN_ALERT_START");
+    expect(result).toContain("DOMAIN_ALERT_END");
+    expect(result).toContain("NHP");
+  });
+
+  it("NHP prompt contains cross-domain food guidance (Korean)", () => {
+    const result = buildQAPrompt([], "ko", "nhp");
+    expect(result).toContain("DOMAIN_ALERT_START");
+    expect(result).toContain("DOMAIN_ALERT_END");
+    expect(result).toContain("식품");
+  });
+
+  it("NHP prompt contains cross-domain food guidance (English)", () => {
+    const result = buildQAPrompt([], "en", "nhp");
+    expect(result).toContain("DOMAIN_ALERT_START");
+    expect(result).toContain("DOMAIN_ALERT_END");
+    expect(result).toContain("food");
+  });
+});
