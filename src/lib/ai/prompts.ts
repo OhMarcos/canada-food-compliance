@@ -11,6 +11,52 @@
 import type { ProductDomain } from "@/lib/rag/domain-classifier";
 
 // ============================================
+// OFFICIAL GOVERNMENT URLs — used in prompts so LLM can provide hyperlinks
+// ============================================
+
+const LEGISLATION_URLS = `
+## 공식 법률 URL 레퍼런스 (Official Legislation URLs)
+
+법적 근거를 인용할 때 반드시 아래 공식 URL을 하이퍼링크로 포함하세요.
+When citing legal provisions, ALWAYS include the official URL as a hyperlink.
+
+### Food Laws (식품 법률)
+| Code | Full Name | Official URL |
+|------|-----------|-------------|
+| SFCA | Safe Food for Canadians Act | https://laws-lois.justice.gc.ca/eng/acts/S-1.1/ |
+| SFCR | Safe Food for Canadians Regulations | https://laws-lois.justice.gc.ca/eng/regulations/SOR-2018-108/ |
+| FDA | Food and Drugs Act | https://laws-lois.justice.gc.ca/eng/acts/F-27/ |
+| FDR | Food and Drug Regulations | https://laws-lois.justice.gc.ca/eng/regulations/C.R.C.,_c._870/ |
+| CPLA | Consumer Packaging and Labelling Act | https://laws-lois.justice.gc.ca/eng/acts/C-38/ |
+| CTA | Customs Tariff Act | https://laws-lois.justice.gc.ca/eng/acts/C-54.011/ |
+
+### NHP Laws (천연건강제품 법률)
+| Code | Full Name | Official URL |
+|------|-----------|-------------|
+| NHPR | Natural Health Products Regulations (SOR/2003-196) | https://laws-lois.justice.gc.ca/eng/regulations/SOR-2003-196/ |
+| GMP Guide | NHP GMP Guide (GUI-0158) | https://www.canada.ca/en/health-canada/services/drugs-health-products/compliance-enforcement/good-manufacturing-practices/guidance-documents/gmp-guidelines-0158.html |
+| NHP Labelling | NHP Labelling Requirements | https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription/legislation-guidelines/guidance-documents/labelling.html |
+| Monographs | Compendium of Monographs | https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription/applications-submissions/product-licensing/compendium-monographs.html |
+| LNHPD | Licensed Natural Health Products Database | https://health-products.canada.ca/lnhpd-bdpsnh/index-eng.jsp |
+| Food-NHP | Classification of Products at the Food-NHP Interface | https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription/legislation-guidelines/guidance-documents/classification-products-food-natural-health-product-interface.html |
+| Self-Care | Self-Care Framework | https://www.canada.ca/en/health-canada/services/drugs-health-products/natural-non-prescription/legislation-guidelines/self-care-framework.html |
+
+### Agencies (규제 기관)
+| Agency | Portal URL |
+|--------|-----------|
+| CFIA | https://inspection.canada.ca/ |
+| Health Canada NNHPD | https://www.canada.ca/en/health-canada/corporate/about-health-canada/branches-agencies/health-products-food-branch/natural-non-prescription-health-products-directorate.html |
+| CBSA | https://www.cbsa-asfc.gc.ca/ |
+| Canada Vigilance (Adverse Reactions) | https://www.canada.ca/en/health-canada/services/drugs-health-products/medeffect-canada/canada-vigilance-program.html |
+
+### 인용 형식 (Citation Format with URL)
+법적 근거 인용 시 다음 형식을 사용하세요:
+- **[법률명](URL)** 제XX조: [내용 요약]
+- 예시: **[NHPR (SOR/2003-196)](https://laws-lois.justice.gc.ca/eng/regulations/SOR-2003-196/)** s.5: NHP 판매 전 제품 라이선스 필수
+- 예시: **[SFCA](https://laws-lois.justice.gc.ca/eng/acts/S-1.1/)** s.11: 수입 라이선스 요건
+`;
+
+// ============================================
 // DOMAIN-SPECIFIC PREAMBLES
 // ============================================
 
@@ -236,8 +282,9 @@ const RULES_KO = `
 [질문에 대한 직접적인 답변]
 
 ### 법적 근거
-- **[법률명]** [조항번호]: [해당 조항의 핵심 내용]
-- **[법률명]** [조항번호]: [해당 조항의 핵심 내용]
+- **[법률명](공식URL)** [조항번호]: [해당 조항의 핵심 내용]
+- **[법률명](공식URL)** [조항번호]: [해당 조항의 핵심 내용]
+(위 URL 레퍼런스 테이블의 공식 URL을 반드시 사용하세요)
 
 ### 실무 가이드
 [실제 준수를 위해 해야 할 구체적인 행동들]
@@ -283,8 +330,9 @@ All answers must follow this structure:
 [Direct answer to the question]
 
 ### Legal Basis
-- **[Law Name]** [Section Number]: [Key content of the section]
-- **[Law Name]** [Section Number]: [Key content of the section]
+- **[Law Name](Official URL)** [Section Number]: [Key content of the section]
+- **[Law Name](Official URL)** [Section Number]: [Key content of the section]
+(MUST use official URLs from the legislation URL reference table above)
 
 ### Practical Guide
 [Specific actions needed for compliance]
@@ -342,7 +390,7 @@ export function buildQAPrompt(
     })
     .join("\n---\n\n");
 
-  return preamble + rules + contextText;
+  return preamble + LEGISLATION_URLS + rules + contextText;
 }
 
 // ============================================
