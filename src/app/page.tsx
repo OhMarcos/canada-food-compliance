@@ -26,8 +26,8 @@ const FEATURES = [
     badge_en: "AI Powered",
     badge_ko: "AI 기반",
     icon: MessageSquare,
-    borderColor: "border-l-emerald-500",
-    iconBg: "bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-300",
+    borderColor: "border-l-primary",
+    iconBg: "bg-primary/10 text-primary",
   },
   {
     title_en: "Product Label Analysis",
@@ -50,8 +50,8 @@ const FEATURES = [
     badge_en: "Custom",
     badge_ko: "맞춤형",
     icon: ClipboardCheck,
-    borderColor: "border-l-teal-500",
-    iconBg: "bg-teal-100 dark:bg-teal-900 text-teal-600 dark:text-teal-300",
+    borderColor: "border-l-accent",
+    iconBg: "bg-accent/10 text-accent",
   },
 ] as const;
 
@@ -148,22 +148,22 @@ export default function DashboardPage() {
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <div className="relative rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 px-6 py-14 text-white overflow-hidden">
+      <div className="relative rounded-2xl bg-gradient-to-br from-primary via-blue-500 to-blue-400 px-6 py-14 text-white overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.12),transparent_70%)]" />
         <div className="relative text-center space-y-5 max-w-3xl mx-auto">
-          <h1 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
-            <span className="text-white">Clear</span>
-            <span className="text-emerald-100">Bite</span>
+          <h1 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-black tracking-wider leading-tight">
+            <span className="text-white">OH</span>
+            <span className="text-blue-200">MAZE</span>
           </h1>
-          <p className="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed">
             {t(
-              <>Navigate Canadian food compliance with clarity — guided by <strong className="text-white">actual legislation</strong>.</>,
-              <>캐나다 식품 규제를 명확하게 — <strong className="text-white">실제 법 조항</strong>에 기반한 규제 안내.</>,
+              <>Navigate food compliance with clarity — guided by <strong className="text-white">actual legislation</strong>.</>,
+              <>식품 규제를 명확하게 — <strong className="text-white">실제 법 조항</strong>에 기반한 규제 안내.</>,
             )}
           </p>
           <div className="pt-2">
             <Link href="/chat">
-              <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50 font-semibold px-6 h-11 text-base font-[family-name:var(--font-display)]">
+              <Button size="lg" className="bg-white text-primary hover:bg-blue-50 font-semibold px-6 h-11 text-base font-[family-name:var(--font-display)]">
                 {t("Start Consultation", "상담 시작하기")}
                 <ArrowRight className="ml-2 size-5" />
               </Button>
@@ -224,7 +224,7 @@ export default function DashboardPage() {
 
       {/* 3-Step Verification Explanation */}
       <Card className="overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-blue-50 dark:from-primary/10 dark:to-blue-950/50">
           <CardTitle className="flex items-center gap-2 font-[family-name:var(--font-display)]">
             <ShieldCheck className="size-5 text-primary" />
             {t("3-Step Verification System", "3단계 검증 시스템")}
@@ -232,8 +232,8 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-5 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-100 dark:border-emerald-900">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-600 text-white text-lg font-bold mb-3">
+            <div className="text-center p-5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white text-lg font-bold mb-3">
                 1
               </div>
               <h3 className="font-semibold mb-2 font-[family-name:var(--font-display)]">{t("Legislation-Based Answers", "법적 근거 기반 답변")}</h3>
@@ -256,8 +256,8 @@ export default function DashboardPage() {
                 )}
               </p>
             </div>
-            <div className="text-center p-5 rounded-xl bg-teal-50 dark:bg-teal-950 border border-teal-100 dark:border-teal-900">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-600 text-white text-lg font-bold mb-3">
+            <div className="text-center p-5 rounded-xl bg-accent/5 dark:bg-accent/10 border border-accent/20 dark:border-accent/30">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-accent text-white text-lg font-bold mb-3">
                 3
               </div>
               <h3 className="font-semibold mb-2 font-[family-name:var(--font-display)]">{t("Confidence Score", "신뢰도 평가")}</h3>

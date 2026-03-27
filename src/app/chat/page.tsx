@@ -25,9 +25,9 @@ export default function ChatLandingPage() {
 
         <Link
           href="/chat/nhp"
-          className="flex flex-col items-center gap-3 p-8 rounded-xl border-2 border-muted hover:border-green-500 hover:bg-green-500/5 transition-all group"
+          className="flex flex-col items-center gap-3 p-8 rounded-xl border-2 border-muted hover:border-accent hover:bg-accent/5 transition-all group"
         >
-          <Leaf className="size-10 text-green-500 group-hover:scale-110 transition-transform" />
+          <Leaf className="size-10 text-accent group-hover:scale-110 transition-transform" />
           <span className="text-xl font-semibold">NHP</span>
           <span className="text-sm text-muted-foreground text-center">
             천연건강제품 규제 (NHPR, NNHPD)
