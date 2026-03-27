@@ -16,9 +16,9 @@ export function CrossDomainAlert({
   const isNhp = crossDomain.suggestedDomain === "nhp";
   const href = isNhp ? "/chat/nhp" : "/chat/food";
   const Icon = isNhp ? Leaf : Apple;
-  const iconColor = isNhp ? "text-green-600" : "text-orange-500";
+  const iconColor = isNhp ? "text-accent" : "text-orange-500";
   const borderColor = isNhp
-    ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30"
+    ? "border-accent/30 bg-accent/5 dark:border-accent/20 dark:bg-accent/10"
     : "border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30";
   const domainLabel = isNhp
     ? t("NHP (Natural Health Products)", "NHP (천연건강제품)")

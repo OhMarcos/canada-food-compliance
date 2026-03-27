@@ -284,7 +284,7 @@ export function ChecklistView() {
               </CardTitle>
               <div className="flex items-center gap-2 flex-wrap">
                 {checklist.is_verified ? (
-                  <Badge className="bg-green-600">{t("Verified", "검증됨")}</Badge>
+                  <Badge className="bg-accent text-white">{t("Verified", "검증됨")}</Badge>
                 ) : (
                   <Badge
                     variant="outline"
@@ -322,7 +322,7 @@ export function ChecklistView() {
                 key={item.order}
                 className={`flex items-start gap-3 p-3 rounded border transition-colors ${
                   completedItems.has(item.order)
-                    ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+                    ? "bg-accent/5 dark:bg-accent/10 border-accent/20 dark:border-accent/30"
                     : "bg-background border-border"
                 }`}
               >

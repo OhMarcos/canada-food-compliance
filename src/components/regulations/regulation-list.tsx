@@ -26,7 +26,7 @@ interface RegulationItem {
 const STATUTE_TYPE_COLORS: Record<string, string> = {
   act: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   regulation: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-  guideline: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  guideline: "bg-accent/10 text-accent dark:bg-accent/20 dark:text-accent",
   policy: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
   standard: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
 };

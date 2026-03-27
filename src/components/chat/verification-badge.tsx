@@ -18,7 +18,7 @@ interface VerificationBadgeProps {
 const BADGE_CONFIG = {
   HIGH: {
     variant: "default" as const,
-    className: "bg-green-600 hover:bg-green-700",
+    className: "bg-accent hover:bg-accent/90",
     label_ko: "높은 신뢰도",
     label_en: "High Confidence",
     icon: "\u2713",

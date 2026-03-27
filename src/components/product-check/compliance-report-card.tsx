@@ -14,7 +14,7 @@ const FEASIBILITY_CONFIG = {
   likely: {
     label_en: "Import Likely Feasible",
     label_ko: "수입 가능성 높음",
-    className: "bg-green-100 text-green-800 border-green-300",
+    className: "bg-accent/10 text-accent border-accent/30",
   },
   conditional: {
     label_en: "Conditional — Action Required",
@@ -29,7 +29,7 @@ const FEASIBILITY_CONFIG = {
 } as const;
 
 const STATUS_ICON = {
-  pass: <CheckCircle2 className="size-4 text-green-600 flex-shrink-0" />,
+  pass: <CheckCircle2 className="size-4 text-accent flex-shrink-0" />,
   fail: <XCircle className="size-4 text-red-600 flex-shrink-0" />,
   needs_action: <AlertTriangle className="size-4 text-yellow-600 flex-shrink-0" />,
   unknown: <HelpCircle className="size-4 text-muted-foreground flex-shrink-0" />,
