@@ -108,7 +108,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         <DialogHeader>
           <DialogTitle>
             {mode === "sign-in"
-              ? t("Sign in to ClearBite", "ClearBite 로그인")
+              ? t("Sign in to OHMAZE", "OHMAZE 로그인")
               : t("Create your account", "계정 만들기")}
           </DialogTitle>
           <DialogDescription>

@@ -1,103 +1,103 @@
-# ClearBite Brand Guide
+# OHMAZE Brand Guide
 
 ## Brand Name
 
-**ClearBite** — Navigate Canadian food compliance with clarity.
+**OHMAZE** — Navigate food compliance with clarity.
 
-- "Clear" = transparent, compliant, trustworthy
-- "Bite" = food, approachable, witty
+- "Oh" = exclamation, aha moment, discovery
+- "Maze" = regulatory complexity, finding the way
 - Tagline EN: "Navigate food compliance with clarity."
 - Tagline KO: "식품 규제, 명확하게."
 
 ## Logo
 
-Text-based logo: **ClearBite** in Plus Jakarta Sans 800 (ExtraBold).
-- "Clear" in emerald-600, "Bite" in slate-900 (light mode) / slate-100 (dark mode)
-- Optional: small checkmark accent in amber-500 after the "e" in "Bite"
+Symbol + Wordmark: Lightbulb with maze pattern inside + **OHMAZE** text.
+- "OH" in Electric Blue (primary), "MAZE" in Charcoal (light mode) / white (dark mode)
+- Symbol: Lightbulb silhouette with maze paths, filament as the solution path
 
 ## Color Palette
 
-### Primary — Emerald (Trust + Freshness + Food)
+### Primary — Electric Blue (Trust + Tech + Innovation)
 
-| Token        | Light Mode      | Dark Mode       | Hex (approx) |
+| Token        | Light Mode      | Dark Mode       | Hex          |
 |------------- |-----------------|-----------------|--------------|
-| primary      | emerald-600     | emerald-400     | #059669 / #34D399 |
-| primary-fg   | white           | slate-950       | #FFFFFF / #0F172A |
+| primary      | Electric Blue   | Bright Blue     | #0066FF      |
+| primary-fg   | white           | white           | #FFFFFF      |
 
-### Accent — Amber (Warmth + Food + Energy)
+### Secondary — Vibrant Orange (Energy + Warmth + Action)
 
-Used for badges, highlights, call-to-action accents.
+Used for highlights, badges, call-to-action accents.
 
-| Token   | Value       | Hex     |
-|---------|-------------|---------|
-| amber   | amber-500   | #F59E0B |
-| amber-light | amber-100 | #FEF3C7 |
+| Token     | Value           | Hex     |
+|-----------|-----------------|---------|
+| secondary | Vibrant Orange  | #FF6B35 |
 
-### Neutrals — Slate
+### Accent — Success Green (Compliance + Approval)
 
-| Usage       | Light         | Dark          |
-|-------------|---------------|---------------|
-| Background  | white         | slate-950     |
-| Foreground  | slate-900     | slate-50      |
-| Muted       | slate-100     | slate-800     |
-| Border      | slate-200     | white/10%     |
+| Token  | Value         | Hex     |
+|--------|---------------|---------|
+| accent | Success Green | #00D97E |
+
+### Neutrals — Slate Blue
+
+| Usage       | Light         | Dark              |
+|-------------|---------------|-------------------|
+| Background  | Cloud White   | Midnight Blue     |
+| Foreground  | Charcoal      | White             |
+| Muted       | Light Slate   | Slate             |
+| Border      | Silver        | white/10%         |
 
 ### Semantic
 
 | Usage       | Color         | Hex     |
 |-------------|---------------|---------|
-| Success     | emerald-500   | #10B981 |
-| Warning     | amber-500     | #F59E0B |
-| Error       | red-500       | #EF4444 |
-| Info        | sky-500       | #0EA5E9 |
+| Success     | Emerald       | #10B981 |
+| Warning     | Amber         | #F59E0B |
+| Error       | Red           | #EF4444 |
 
-### Chart Palette (Food-inspired)
+### Chart Palette
 
-1. Emerald (#10B981) — primary data
-2. Amber (#F59E0B) — secondary data
-3. Coral (#F97316) — tertiary
-4. Teal (#14B8A6) — quaternary
+1. Electric Blue (#0066FF) — primary data
+2. Vibrant Orange (#FF6B35) — secondary data
+3. Success Green (#00D97E) — tertiary
+4. Amber (#F59E0B) — quaternary
 5. Purple (#8B5CF6) — quinary
-
-### Gradients
-
-- Hero gradient: `from-emerald-600 via-emerald-500 to-teal-500`
-- Subtle card accent: `from-emerald-50 to-teal-50` (light) / `from-emerald-950/50 to-teal-950/50` (dark)
 
 ## Typography
 
 ### Font Stack
 
-| Usage    | Font               | Weight        | Variable           |
-|----------|--------------------|---------------|--------------------|
-| Display  | Plus Jakarta Sans  | 700–800       | --font-display     |
-| Body     | Geist Sans         | 400–600       | --font-geist-sans  |
-| Mono     | Geist Mono         | 400           | --font-geist-mono  |
+| Usage    | Font             | Weight        | Variable               |
+|----------|------------------|---------------|------------------------|
+| Display  | Outfit           | 600–900       | --font-outfit          |
+| Body     | Manrope          | 400–600       | --font-manrope         |
+| Mono     | Source Code Pro   | 400–500       | --font-source-code-pro |
+| Korean   | Pretendard       | 400–700       | (CDN fallback)         |
 
 ### Scale
 
 | Element     | Size              | Weight  | Font    |
 |-------------|-------------------|---------|---------|
-| H1 (Hero)   | text-4xl/5xl      | 800     | Display |
-| H2 (Section)| text-2xl          | 700     | Display |
-| H3 (Card)   | text-lg/base      | 600     | Display |
-| Body        | text-sm           | 400     | Body    |
-| Caption     | text-xs           | 400     | Body    |
-| Code        | text-xs           | 400     | Mono    |
+| H1 (Hero)   | text-4xl (36px)   | 800     | Display |
+| H2 (Section)| text-2xl (28px)   | 700     | Display |
+| H3 (Card)   | text-lg (22px)    | 600     | Display |
+| Body        | text-base (16px)  | 400     | Body    |
+| Small       | text-sm (14px)    | 400     | Body    |
+| Code        | text-sm (14px)    | 400     | Mono    |
 
 ## Voice & Tone
 
 - **Professional but approachable** — not a law firm, not a food blog
 - **Clear and direct** — no jargon without explanation
-- **Helpful and supportive** — guiding importers, not lecturing them
+- **Helpful and supportive** — guiding creators, not lecturing them
 - **Confident but honest** — states confidence levels, cites sources
 - Avoid: legalese, overly casual slang, fear-mongering
 
 ## UI Principles
 
 1. **White space generously** — let content breathe
-2. **Emerald as accent, not dominant** — primary color for CTAs, badges, active states
-3. **Cards with subtle left borders** — colored by feature category
+2. **Blue as accent, not dominant** — primary color for CTAs, badges, active states
+3. **Cards with subtle borders** — colored by feature category
 4. **Rounded corners** — 0.625rem base radius (friendly, modern)
 5. **Consistent iconography** — Lucide icons throughout
 6. **Trust signals prominent** — verification badges, citation counts always visible
@@ -106,8 +106,8 @@ Used for badges, highlights, call-to-action accents.
 
 | Do | Don't |
 |----|-------|
-| Use emerald for primary actions | Use emerald for backgrounds/large areas |
-| Keep text slate-900/slate-50 | Use colored text for body copy |
-| Use amber sparingly for highlights | Make everything amber |
-| Show the ClearBite wordmark | Add a complex icon/mascot |
-| Use Plus Jakarta Sans for headings | Mix in additional display fonts |
+| Use Electric Blue for primary actions | Use blue for backgrounds/large areas |
+| Keep text Charcoal/white | Use colored text for body copy |
+| Use Orange sparingly for highlights | Make everything orange |
+| Show the OHMAZE wordmark with symbol | Add a complex mascot |
+| Use Outfit for headings | Mix in additional display fonts |

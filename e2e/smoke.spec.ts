@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Smoke Tests — Page Loading", () => {
-  test("homepage loads and shows ClearBite branding", async ({ page }) => {
+  test("homepage loads and shows OHMAZE branding", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/ClearBite|Canadian Food/i);
+    await expect(page).toHaveTitle(/OHMAZE|Food Compliance/i);
     // Header should be visible
     await expect(page.locator("header")).toBeVisible();
   });

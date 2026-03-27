@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Outfit, Manrope, Source_Code_Pro } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/hooks/use-language";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -8,26 +8,31 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { Header } from "@/components/layout/header";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-display",
+const sourceCodePro = Source_Code_Pro({
+  variable: "--font-source-code-pro",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "ClearBite — Canadian Food Compliance",
+  title: "OHMAZE — Navigate Food Compliance with Clarity",
   description:
-    "Navigate Canadian food compliance with clarity. AI-powered regulatory Q&A with 3-step verification, product label analysis, and compliance checklists.",
+    "AI-powered Canadian food & NHP compliance platform. Regulatory Q&A, label analysis, and compliance checklists — simplified.",
+  icons: {
+    icon: "/ohmaze-icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -38,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${plusJakarta.variable} antialiased`}
+        className={`${outfit.variable} ${manrope.variable} ${sourceCodePro.variable} antialiased`}
       >
         <ErrorBoundary>
           <AuthProvider>

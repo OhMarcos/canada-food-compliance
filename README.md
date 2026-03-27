@@ -1,6 +1,6 @@
-# ClearBite
+# OHMAZE
 
-Canadian food compliance platform powered by AI. Ask regulatory questions, analyze product labels, generate compliance checklists, and cross-check market requirements — all backed by actual Canadian legislation with 3-step verification.
+Canadian food & NHP compliance platform powered by AI. Ask regulatory questions, analyze product labels, generate compliance checklists, and cross-check market requirements — all backed by actual Canadian legislation with 3-step verification.
 
 ## Features
 

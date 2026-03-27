@@ -34,7 +34,7 @@ export async function fetchAndExtract(url: string): Promise<string> {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "ClearBite/1.0 (Canadian food compliance research tool)",
+        "User-Agent": "OHMAZE/1.0 (Canadian food compliance research tool)",
         Accept: "text/html",
       },
     });
@@ -90,7 +90,7 @@ export async function fetchRegulationWithSubpages(
     const response = await fetch(baseUrl, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "ClearBite/1.0 (Canadian food compliance research tool)",
+        "User-Agent": "OHMAZE/1.0 (Canadian food compliance research tool)",
         Accept: "text/html",
       },
     });

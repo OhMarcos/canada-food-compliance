@@ -24,7 +24,7 @@ interface ReportExportProps {
 function buildReport(question: string, message: ChatMessage, isEn: boolean): string {
   const lines: string[] = [
     "====================================",
-    isEn ? "  ClearBite Compliance Report" : "  ClearBite 컴플라이언스 리포트",
+    isEn ? "  OHMAZE Compliance Report" : "  OHMAZE 컴플라이언스 리포트",
     "====================================",
     "",
     `${isEn ? "Date" : "일시"}: ${new Date().toLocaleString(isEn ? "en-US" : "ko-KR")}`,

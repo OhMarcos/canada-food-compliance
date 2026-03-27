@@ -53,9 +53,9 @@ export function Header() {
               className="mr-6 flex items-center space-x-2"
               aria-label={t("Go to home", "홈으로")}
             >
-              <span className="font-[family-name:var(--font-display)] font-extrabold text-lg tracking-tight">
-                <span className="text-primary">Clear</span>
-                <span>Bite</span>
+              <span className="font-[family-name:var(--font-display)] font-black text-lg tracking-wider">
+                <span className="text-primary">OH</span>
+                <span>MAZE</span>
               </span>
             </Link>
 

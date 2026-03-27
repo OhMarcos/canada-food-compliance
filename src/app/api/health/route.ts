@@ -199,7 +199,7 @@ async function checkWebPipeline(): Promise<CheckResult & { details?: Record<stri
           const resp = await fetch(url, {
             signal: controller.signal,
             headers: {
-              "User-Agent": "ClearBite/1.0 (Canadian food compliance research tool)",
+              "User-Agent": "OHMAZE/1.0 (Canadian food compliance research tool)",
               Accept: "text/html",
             },
             redirect: "follow",

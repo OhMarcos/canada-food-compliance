@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Compact lightbulb + maze for favicon/app icon -->
+  <path d="M16 2C10.5 2 6 6.5 6 12c0 3.5 1.8 6.5 4.5 8.3V23a2 2 0 002 2h7a2 2 0 002-2v-2.7C24.2 18.5 26 15.5 26 12c0-5.5-4.5-10-10-10z" fill="#0066FF"/>
+  <!-- Maze lines inside -->
+  <path d="M11 12a5 5 0 015-5M21 12a5 5 0 00-5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <path d="M13 12a3 3 0 013-3M19 12a3 3 0 00-3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+  <!-- Solution path -->
+  <path d="M16 15V9" stroke="#00D97E" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="16" cy="7.5" r="1.5" fill="#00D97E"/>
+  <!-- Bulb base -->
+  <path d="M12 27h8M13 29h6" stroke="#0066FF" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

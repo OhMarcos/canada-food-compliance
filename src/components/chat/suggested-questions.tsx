@@ -16,7 +16,7 @@ export function SuggestedQuestions({
   readonly domain?: ProductDomain;
 }) {
   const questions = domain === "nhp" ? SUGGESTED_QUESTIONS_NHP : SUGGESTED_QUESTIONS_FOOD;
-  const title = domain === "nhp" ? "ClearBite NHP Q&A" : "ClearBite Food Q&A";
+  const title = domain === "nhp" ? "OHMAZE NHP Q&A" : "OHMAZE Food Q&A";
   const subtitle = domain === "nhp"
     ? t(
         <>A regulatory consultation system for Canadian Natural Health Products (NHP).<br />Cites NHPR, GMP guides, and verifies through a 3-step process.</>,
