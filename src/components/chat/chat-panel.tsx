@@ -11,7 +11,7 @@ import { useAuthGuard } from "@/hooks/use-auth-guard";
 import type { ChatMessage } from "@/types/chat";
 import { Trash2 } from "lucide-react";
 
-import { STORAGE_KEY_FOOD, STORAGE_KEY_NHP, METADATA_DELIMITER, type Message } from "./chat-constants";
+import { STORAGE_KEY_FOOD, STORAGE_KEY_NHP, METADATA_DELIMITER, type Message, type CrossDomainInfo } from "./chat-constants";
 import type { ProductDomain } from "@/lib/rag/domain-classifier";
 import { stripCitationJson } from "./strip-citations";
 import { MarkdownContent } from "./markdown-content";
@@ -182,6 +182,7 @@ export function ChatPanel({ domain = "food" }: { readonly domain?: ProductDomain
 
       let chatMessage: ChatMessage | undefined;
       let processingTime: number | undefined;
+      let crossDomain: CrossDomainInfo | undefined;
       // Use server-stripped answer if available, otherwise strip client-side
       let answerText = stripCitationJson(rawAnswerText);
 
@@ -202,6 +203,12 @@ export function ChatPanel({ domain = "food" }: { readonly domain?: ProductDomain
             timestamp: new Date().toISOString(),
           };
           processingTime = metadata.processing_time_ms;
+          if (metadata.cross_domain) {
+            crossDomain = {
+              suggestedDomain: metadata.cross_domain.suggested_domain,
+              reason: metadata.cross_domain.reason,
+            };
+          }
         } catch {
           // metadata parse failed, use text only
         }
@@ -214,6 +221,7 @@ export function ChatPanel({ domain = "food" }: { readonly domain?: ProductDomain
         chatMessage,
         timestamp: new Date().toISOString(),
         processingTimeMs: processingTime,
+        crossDomain,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -254,6 +262,10 @@ export function ChatPanel({ domain = "food" }: { readonly domain?: ProductDomain
               chatMessage: data.message,
               timestamp: new Date().toISOString(),
               processingTimeMs: data.processing_time_ms,
+              crossDomain: data.cross_domain ? {
+                suggestedDomain: data.cross_domain.suggested_domain,
+                reason: data.cross_domain.reason,
+              } : undefined,
             };
             setMessages((prev) => [...prev, assistantMessage]);
             setStreamingContent("");

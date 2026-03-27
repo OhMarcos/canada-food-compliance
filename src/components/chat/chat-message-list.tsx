@@ -6,6 +6,7 @@ import { VerificationBadge } from "./verification-badge";
 import { CitationCard } from "./citation-card";
 import { ReportExport } from "./report-export";
 import { MarkdownContent } from "./markdown-content";
+import { CrossDomainAlert } from "./cross-domain-alert";
 import type { Message } from "./chat-constants";
 
 function formatTime(isoString?: string, locale?: string): string {
@@ -89,6 +90,15 @@ function AssistantMessage({
         >
           <Copy className="size-3 text-muted-foreground" />
         </button>
+
+        {/* Cross-domain recommendation */}
+        {message.crossDomain && (
+          <CrossDomainAlert
+            crossDomain={message.crossDomain}
+            language={language}
+            t={t}
+          />
+        )}
       </div>
 
       {/* Citations */}

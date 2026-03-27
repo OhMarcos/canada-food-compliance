@@ -7,7 +7,7 @@
 import { NextRequest } from "next/server";
 import { v4 as uuid } from "uuid";
 import { ChatInputSchema } from "@/lib/validators/chat";
-import { streamAnswer, stripCitationBlock } from "@/lib/ai/chat-engine";
+import { streamAnswer, stripCitationBlock, stripDomainAlert, extractCrossDomainAlert, type CrossDomainRecommendation } from "@/lib/ai/chat-engine";
 import { verifyAnswer } from "@/lib/ai/verifier";
 import { marketCrossCheck } from "@/lib/market/scanner";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
 
     // Step 4: RAG retrieval + LLM streaming
     step = "stream-answer";
-    const { stream: streamResult, contexts } = await streamAnswer(
+    const { stream: streamResult, contexts, domainClassification } = await streamAnswer(
       input.message,
       {
         language: input.language,
@@ -197,9 +197,11 @@ export async function POST(request: NextRequest) {
             controller.enqueue(encoder.encode(chunk));
           }
 
-          // Parse citations from the completed response, then strip JSON from answer
+          // Parse citations from the completed response, then strip JSON + domain alert from answer
           const citations = parseCitationsFromText(fullText, contexts);
-          const cleanAnswer = stripCitationBlock(fullText);
+          const crossDomainAlert = extractCrossDomainAlert(fullText, domainClassification.domain);
+          const withoutAlert = stripDomainAlert(fullText);
+          const cleanAnswer = stripCitationBlock(withoutAlert);
 
           // Run verification + market check in parallel
           const [verification, marketCheck] = await Promise.all([
@@ -227,6 +229,10 @@ export async function POST(request: NextRequest) {
           const metadata = {
             ...buildMetadata(input, verification, marketCheck, citations, startTime),
             clean_answer: cleanAnswer,
+            cross_domain: crossDomainAlert ? {
+              suggested_domain: crossDomainAlert.suggestedDomain,
+              reason: crossDomainAlert.reason,
+            } : undefined,
           };
           controller.enqueue(
             encoder.encode(METADATA_DELIMITER + JSON.stringify(metadata)),

@@ -6,6 +6,11 @@ export const STORAGE_KEY_NHP = "cfc-chat-history-nhp";
 export const STORAGE_KEY = "cfc-chat-history";
 export const METADATA_DELIMITER = "\n\n---METADATA---\n";
 
+export interface CrossDomainInfo {
+  readonly suggestedDomain: "food" | "nhp";
+  readonly reason: string;
+}
+
 export interface Message {
   readonly id: string;
   readonly role: "user" | "assistant";
@@ -13,6 +18,7 @@ export interface Message {
   readonly chatMessage?: ChatMessage;
   readonly timestamp?: string;
   readonly processingTimeMs?: number;
+  readonly crossDomain?: CrossDomainInfo;
 }
 
 export const SUGGESTED_QUESTIONS_FOOD = [

@@ -163,7 +163,7 @@ export function stripCitationBlock(text: string): string {
  * Extract cross-domain recommendation from LLM response.
  * Looks for ---DOMAIN_ALERT_START--- / ---DOMAIN_ALERT_END--- delimiters.
  */
-function extractCrossDomainAlert(
+export function extractCrossDomainAlert(
   text: string,
   currentDomain: ProductDomain,
 ): CrossDomainRecommendation | undefined {

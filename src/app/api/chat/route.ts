@@ -109,6 +109,10 @@ export async function POST(request: NextRequest) {
       },
       conversation_id: uuid(),
       processing_time_ms: Date.now() - startTime,
+      cross_domain: qaResult.crossDomainRecommendation ? {
+        suggested_domain: qaResult.crossDomainRecommendation.suggestedDomain,
+        reason: qaResult.crossDomainRecommendation.reason,
+      } : undefined,
     };
 
     // Consume tokens (fire-and-forget — already validated above)

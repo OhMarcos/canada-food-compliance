@@ -77,16 +77,49 @@ function findMatchingClose(text: string, startIdx: number): number {
   return -1;
 }
 
-export function stripCitationJson(text: string): string {
-  const start = findCitationStart(text);
-  if (start === -1) return text;
+/**
+ * Strip domain alert delimiters from streaming text.
+ * Removes partial or complete ---DOMAIN_ALERT_START--- / ---DOMAIN_ALERT_END--- blocks.
+ */
+function stripDomainAlertClient(text: string): string {
+  const startMarker = "---DOMAIN_ALERT_START---";
+  const endMarker = "---DOMAIN_ALERT_END---";
 
-  const end = findMatchingClose(text, start);
-  if (end === -1) {
-    // Incomplete JSON (still streaming) — strip from start to end of text
-    return text.slice(0, start).replace(/\n{3,}/g, "\n\n").trim();
+  const startIdx = text.indexOf(startMarker);
+  if (startIdx === -1) {
+    // Check for partial marker at end (still streaming)
+    const partial = "---DOMAIN_ALERT";
+    const partialIdx = text.lastIndexOf(partial);
+    if (partialIdx !== -1 && partialIdx > text.length - startMarker.length - 5) {
+      return text.slice(0, partialIdx).replace(/\n{3,}/g, "\n\n").trim();
+    }
+    return text;
   }
 
-  const cleaned = text.slice(0, start) + text.slice(end);
+  const endIdx = text.indexOf(endMarker);
+  if (endIdx === -1) {
+    // Incomplete block (still streaming) — strip from start marker to end
+    return text.slice(0, startIdx).replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  return (text.slice(0, startIdx) + text.slice(endIdx + endMarker.length))
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export function stripCitationJson(text: string): string {
+  // Strip domain alert first, then citations
+  const withoutAlert = stripDomainAlertClient(text);
+
+  const start = findCitationStart(withoutAlert);
+  if (start === -1) return withoutAlert;
+
+  const end = findMatchingClose(withoutAlert, start);
+  if (end === -1) {
+    // Incomplete JSON (still streaming) — strip from start to end of text
+    return withoutAlert.slice(0, start).replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  const cleaned = withoutAlert.slice(0, start) + withoutAlert.slice(end);
   return cleaned.replace(/\n{3,}/g, "\n\n").trim();
 }
