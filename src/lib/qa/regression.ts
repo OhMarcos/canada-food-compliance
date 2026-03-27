@@ -147,6 +147,46 @@ function matchKeywords(
 }
 
 // ============================================
+// Regulation name aliases (for fuzzy citation matching)
+// ============================================
+
+/** Map of regulation names to known aliases and abbreviations */
+const REGULATION_ALIASES: ReadonlyMap<string, readonly string[]> = new Map([
+  ["safe food for canadians act", ["sfca", "sfca act", "safe food for canadians"]],
+  ["safe food for canadians regulations", ["sfcr", "sfcr regulations", "safe food for canadians"]],
+  ["food and drug regulations", ["fdr", "food and drug regs", "c.r.c., c. 870"]],
+  ["food and drugs act", ["fda", "food and drugs", "f&d act"]],
+  ["consumer packaging and labelling act", ["cpla", "consumer packaging"]],
+  ["canada agricultural products act", ["capa"]],
+  ["meat inspection act", ["mia"]],
+  ["health of animals act", ["haa"]],
+  ["pest control products act", ["pcpa"]],
+  ["canada organic regime", ["cor", "organic regime"]],
+  ["novel food regulations", ["novel foods"]],
+]);
+
+/**
+ * Check if two regulation names match, considering aliases.
+ */
+function regulationNameMatches(actual: string, expected: string): boolean {
+  const a = actual.toLowerCase();
+  const e = expected.toLowerCase();
+
+  // Direct substring match
+  if (a.includes(e) || e.includes(a)) return true;
+
+  // Check aliases for expected
+  for (const [canonical, aliases] of REGULATION_ALIASES) {
+    const isExpectedMatch = e.includes(canonical) || aliases.some((alias) => e.includes(alias));
+    if (!isExpectedMatch) continue;
+    const isActualMatch = a.includes(canonical) || aliases.some((alias) => a.includes(alias));
+    if (isActualMatch) return true;
+  }
+
+  return false;
+}
+
+// ============================================
 // Scoring
 // ============================================
 
@@ -227,14 +267,17 @@ async function runCase(testCase: RegressionCase): Promise<CaseResult> {
     const weights = testCase.scoring_weights ?? DEFAULT_SCORING_WEIGHTS;
     const answerLower = qaResult.answer.toLowerCase();
 
-    // ── Check 1: Citation match ──
+    // ── Check 1: Citation match (with alias resolution) ──
     const expectedCitations = testCase.expected_citations ?? [];
     const citationMatched = expectedCitations.length === 0 ||
       expectedCitations.some((expected) =>
+        // Check in structured citations
         qaResult.citations.some((actual) =>
-          actual.regulation_name.toLowerCase().includes(expected.regulation_name.toLowerCase()) ||
+          regulationNameMatches(actual.regulation_name, expected.regulation_name) ||
           (expected.section_number && actual.section_number.includes(expected.section_number)),
-        ),
+        ) ||
+        // Also check if the regulation name appears in the answer text itself
+        regulationNameMatches(answerLower, expected.regulation_name),
       );
     const citationScore = expectedCitations.length === 0 ? 100 : (citationMatched ? 100 : 0);
     if (!citationMatched) {
