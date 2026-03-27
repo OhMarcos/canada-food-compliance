@@ -1,84 +1,57 @@
 /**
- * Domain Classifier — routes user queries to the correct product domain.
+ * Local test runner for NHP domain classifier edge cases.
+ * Tests the keyword-based classifier (no API calls needed).
  *
- * Canada legally distinguishes Food (CFIA/SFCA) from Natural Health Products
- * (Health Canada NNHPD/NHPR). The primary boundary is the presence of
- * therapeutic health claims.
- *
- * Uses a lightweight LLM call (Claude Haiku) for accurate classification,
- * with keyword-based fallback when the LLM is unavailable.
+ * Usage: npx tsx test-nhp/run-classifier-test.ts
  */
 
-import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { TimeBasedCache } from "@/lib/cache";
+import { NHP_EDGE_CASES, type EdgeCase } from "./edge-cases";
 
-export type ProductDomain = "food" | "nhp" | "both";
+// ---- Import the actual keyword classifier from source ----
+// We use dynamic import with path alias resolution via tsx
 
-export interface DomainClassification {
+type ProductDomain = "food" | "nhp" | "both";
+
+interface DomainClassification {
   readonly domain: ProductDomain;
   readonly confidence: "high" | "medium" | "low";
   readonly reason: string;
 }
 
-const CLASSIFIER_MODEL = "claude-haiku-4-5-20251001";
+// ---- Replicate the classifier logic inline (to avoid alias issues with tsx) ----
 
-/** Cache classifications for repeated/similar queries */
-const classificationCache = new TimeBasedCache<DomainClassification>({
-  ttlMs: 10 * 60 * 1000, // 10 minutes
-  maxEntries: 200,
-});
-
-// ============================================
-// KEYWORD LISTS
-// ============================================
-
-/**
- * NHP-related keywords for keyword-based fallback classification.
- * All matching uses word-boundary regex (\b) to avoid false positives.
- * Ambiguous ingredient names (calcium, iron, etc.) use compound forms only.
- */
 const NHP_KEYWORDS: readonly string[] = [
-  // --- Product category ---
   "natural health product", "nhp", "nhps", "npn", "din-hm",
   "supplement", "supplements", "health supplement", "dietary supplement",
   "nutraceutical", "health product", "wellness product", "wellness",
   "natural remedy", "alternative medicine",
   "medicinal herb", "medicinal herbs",
   "colostrum supplement", "weight loss supplement", "powder supplement",
-  // --- Vitamins ---
   "vitamin", "multivitamin", "prenatal vitamin",
   "folate", "folic acid", "biotin",
-  // --- Minerals (compound form to avoid food collision) ---
   "mineral supplement", "calcium supplement", "iron supplement",
   "magnesium supplement", "zinc supplement", "selenium supplement",
   "chromium supplement", "potassium supplement",
-  // --- Probiotics ---
   "probiotic", "probiotics", "prebiotic", "prebiotics",
   "digestive enzyme", "lactase",
-  // --- Herbal / Botanical ---
   "herbal", "herbal remedy", "herbal medicine",
   "ashwagandha", "echinacea", "turmeric", "ginkgo", "ginkgo biloba",
   "milk thistle", "saw palmetto", "ginseng", "red ginseng",
   "elderberry", "valerian", "chamomile", "rhodiola",
   "bacopa", "fenugreek", "curcumin", "adaptogen", "nootropic",
   "botanical extract",
-  // --- Traditional medicine ---
   "homeopathic", "homeopathy",
   "traditional medicine", "traditional chinese medicine", "tcm", "ayurveda",
-  // --- Specific ingredients ---
   "melatonin", "glucosamine", "chondroitin", "collagen supplement",
   "coq10", "coenzyme q10", "alpha-lipoic acid",
   "5-htp", "gaba", "nac", "resveratrol", "quercetin",
   "spirulina", "chlorella", "lutein", "lycopene",
   "fish oil", "krill oil", "flaxseed oil",
   "hyaluronic acid", "msm",
-  // --- Dosage forms ---
   "capsule", "capsules", "tablet", "tablets",
   "softgel", "softgels", "gummy", "gummies",
   "tincture", "lozenge", "chewable", "pills",
   "drops", "spray", "sublingual", "enteric-coated",
-  // --- Health claims / benefits ---
   "immune support", "immune booster",
   "digestive support", "digestive health",
   "joint support", "joint health", "bone health",
@@ -87,7 +60,6 @@ const NHP_KEYWORDS: readonly string[] = [
   "energy support", "detox", "detoxification",
   "liver support", "anti-inflammatory",
   "weight loss supplement", "metabolism support",
-  // --- Regulatory terms ---
   "medicinal ingredient", "non-medicinal ingredient",
   "therapeutic claim", "health claim",
   "site licence", "site license", "product licence", "product license",
@@ -95,32 +67,25 @@ const NHP_KEYWORDS: readonly string[] = [
   "adverse reaction", "canada vigilance",
   "gmp", "good manufacturing practice",
   "product facts table",
-  // --- Korean: general ---
   "천연건강제품", "건강기능식품", "건강보조식품", "건강식품",
   "영양제", "보충제", "영양보충제", "기능성식품",
   "건강 보조", "건강 제품",
-  // --- Korean: vitamins/minerals ---
   "비타민", "엽산", "멜라토닌",
   "칼슘 보충제", "철분 보충제", "마그네슘 보충제",
   "아연 보충제", "셀레늄",
-  // --- Korean: herbs / traditional ---
   "한약", "한방", "생약", "동종요법",
   "인삼", "홍삼", "당귀", "황기", "감초", "도라지",
   "울금", "강황", "약초", "민간요법",
-  // --- Korean: specific ingredients ---
   "프로바이오틱스", "유산균", "락토바실러스",
   "글루코사민", "콘드로이친", "콜라겐",
   "코엔자임", "루테인", "라이코펜",
   "오메가3", "오메가", "히알루론산",
   "스피루리나", "클로렐라",
-  // --- Korean: dosage forms ---
   "캡슐", "정제", "알약", "젤리", "환", "과립",
   "액상", "분말", "시럽",
-  // --- Korean: health benefits ---
   "면역력", "면역증진", "장건강", "관절건강", "뼈건강",
   "피로회복", "혈행개선", "수면", "숙면",
   "해독", "디톡스", "간건강", "체중관리",
-  // --- Korean: regulatory ---
   "건강 주장", "건강 기능", "치료적 주장",
   "제품 라이선스", "시설 라이선스",
   "부작용", "부작용 보고",
@@ -128,7 +93,6 @@ const NHP_KEYWORDS: readonly string[] = [
 ];
 
 const FOOD_KEYWORDS: readonly string[] = [
-  // --- English ---
   "food safety", "food labeling", "food labelling", "nutrition facts",
   "sfca", "sfcr", "cfia", "food inspection",
   "food import", "food export", "food additive",
@@ -142,7 +106,6 @@ const FOOD_KEYWORDS: readonly string[] = [
   "food recall", "food grade",
   "ingredients list", "nutritional", "calorie",
   "labelling", "best before",
-  // --- Korean ---
   "식품 안전", "식품 라벨링", "영양 표시", "영양성분표",
   "식품 수입", "식품 수출", "식품 첨가물",
   "알레르겐", "성분표", "순중량",
@@ -152,30 +115,20 @@ const FOOD_KEYWORDS: readonly string[] = [
   "라벨", "유통기한", "칼로리", "식품표시",
 ];
 
-// ============================================
-// BOUNDARY PATTERNS — detect "food or NHP?" comparison queries
-// ============================================
-
 const BOUNDARY_PATTERNS: readonly RegExp[] = [
-  // Direct comparison: "food or NHP", "food vs NHP"
   /\bfood\s+(?:or|vs|versus)\s+(?:nhp|supplement|natural health)/i,
   /\b(?:nhp|supplement)\s+(?:or|vs|versus)\s+food\b/i,
-  // Classification inquiry: "is it food or NHP", "classified as"
   /\bis\s+(?:it|this|my product)\s+(?:food|nhp|a supplement)/i,
   /\bclassified\s+as\b/i,
   /\bcategorized\s+as\b/i,
-  // "Can I sell X as food" with NHP signals
   /\bsell\b.*\bas\s+food\b.*(?:supplement|vitamin|capsule|health claim|therapeutic)/i,
   /\bwithout\s+(?:npn|product\s+licen[cs]e)\b/i,
-  // Korean comparison patterns
   /식품인가.*(?:nhp|보충제|건강기능식품)/i,
   /(?:nhp|보충제|건강기능식품)인가.*식품/i,
   /식품과\s*(?:nhp|건강기능식품)/i,
   /식품\s*(?:또는|아니면)\s*(?:nhp|보충제|건강기능식품)/i,
-  // Korean classification inquiry
   /(?:어떤|무슨)\s*(?:분류|카테고리|규제)/i,
   /(?:식품|nhp)으?로\s*분류/i,
-  // Boundary product patterns
   /\bfunctional\s+food\b/i,
   /\bfortified\b/i,
   /\benriched\b/i,
@@ -185,20 +138,11 @@ const BOUNDARY_PATTERNS: readonly RegExp[] = [
   /\bfood[- ]nhp\s+(?:boundary|interface|distinction)\b/i,
 ];
 
-// ============================================
-// KEYWORD MATCHING (word-boundary regex)
-// ============================================
-
-/** Pre-compile keyword regexes for performance */
 function buildKeywordRegexes(keywords: readonly string[]): readonly RegExp[] {
   return keywords.map((kw) => {
     const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // Korean characters don't support \b — use lookaround for non-Korean boundaries
     const hasKorean = /[가-힣]/.test(kw);
-    if (hasKorean) {
-      // For Korean: match if keyword appears (Korean word boundaries are inherently whitespace-based)
-      return new RegExp(escaped, "i");
-    }
+    if (hasKorean) return new RegExp(escaped, "i");
     return new RegExp(`\\b${escaped}\\b`, "i");
   });
 }
@@ -210,25 +154,15 @@ function countMatches(text: string, regexes: readonly RegExp[]): number {
   return regexes.filter((rx) => rx.test(text)).length;
 }
 
-// ============================================
-// CLASSIFICATION LOGIC
-// ============================================
-
-/**
- * Fast keyword-based classification (fallback when LLM unavailable).
- * Priority: boundary patterns → keyword scores → default food.
- */
 function keywordClassify(query: string): DomainClassification {
   const lower = query.toLowerCase();
 
-  // 1. Boundary pattern check (highest priority)
   for (const pattern of BOUNDARY_PATTERNS) {
     if (pattern.test(lower)) {
       return { domain: "both", confidence: "high", reason: "Boundary comparison pattern detected" };
     }
   }
 
-  // 2. Keyword scoring
   const nhpScore = countMatches(lower, NHP_REGEXES);
   const foodScore = countMatches(lower, FOOD_REGEXES);
 
@@ -242,69 +176,109 @@ function keywordClassify(query: string): DomainClassification {
     return { domain: "food", confidence: foodScore >= 2 ? "high" : "medium", reason: `Matched ${foodScore} food keyword(s)` };
   }
 
-  // Default to food (original platform focus) with low confidence
   return { domain: "food", confidence: "low", reason: "No strong domain signals; defaulting to food" };
 }
 
-/**
- * LLM-based domain classification using Claude Haiku.
- * Returns null on failure so caller can fall back to keyword classification.
- */
-async function llmClassify(query: string): Promise<DomainClassification | null> {
-  try {
-    const { text } = await generateText({
-      model: anthropic(CLASSIFIER_MODEL),
-      system: `You classify user queries about Canadian product regulations into one of three domains.
+// ---- Test Runner ----
 
-DOMAIN DEFINITIONS:
-- "food": Questions about food products regulated under SFCA/SFCR by CFIA. Includes food labeling, nutrition facts, food import/export, food additives, food safety, HACCP, allergens.
-- "nhp": Questions about Natural Health Products regulated under NHPR (SOR/2003-196) by Health Canada NNHPD. Includes supplements, vitamins, minerals, herbal products, probiotics, homeopathic medicines, traditional medicines, NPN licensing, NHP GMP, NHP labelling (Product Facts table), health claims, adverse reaction reporting.
-- "both": Questions that span both domains, such as Food-NHP boundary classification, products that could be either food or NHP, questions about both regulatory systems.
+interface TestResult {
+  readonly edgeCase: EdgeCase;
+  readonly actual: DomainClassification;
+  readonly pass: boolean;
+  readonly partialPass: boolean;
+}
 
-KEY DISTINCTION: The presence of THERAPEUTIC health claims is the primary legal boundary. Food with therapeutic claims = NHP. NHP without therapeutic claims might be food.
+function isAcceptable(expected: ProductDomain, actual: ProductDomain): boolean {
+  if (expected === actual) return true;
+  if (actual === "both" && (expected === "nhp" || expected === "food")) return true;
+  if (expected === "both" && (actual === "nhp" || actual === "food")) return true;
+  return false;
+}
 
-Output ONLY a JSON object: {"domain": "food"|"nhp"|"both", "confidence": "high"|"medium"|"low", "reason": "brief reason"}`,
-      prompt: query,
-      maxOutputTokens: 150,
-      temperature: 0,
-    });
+function runTests(): void {
+  const results: TestResult[] = [];
+  let pass = 0;
+  let partialPass = 0;
+  let fail = 0;
 
-    const cleanText = text.trim().replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
-    const parsed = JSON.parse(cleanText);
+  for (const ec of NHP_EDGE_CASES) {
+    const actual = keywordClassify(ec.query);
+    const exactPass = actual.domain === ec.expectedDomain;
+    const acceptable = isAcceptable(ec.expectedDomain, actual.domain);
 
-    if (parsed.domain && ["food", "nhp", "both"].includes(parsed.domain)) {
-      return {
-        domain: parsed.domain as ProductDomain,
-        confidence: parsed.confidence ?? "medium",
-        reason: parsed.reason ?? "",
-      };
-    }
-  } catch (error) {
-    console.warn("[domain-classifier] LLM classification failed:", error instanceof Error ? error.message : error);
+    results.push({ edgeCase: ec, actual, pass: exactPass, partialPass: acceptable && !exactPass });
+
+    if (exactPass) pass++;
+    else if (acceptable) partialPass++;
+    else fail++;
   }
-  return null;
+
+  console.log("\n" + "=".repeat(80));
+  console.log("NHP EDGE CASE TEST RESULTS — Keyword Classifier (v2: expanded + boundary)");
+  console.log("=".repeat(80));
+  console.log(`Total: ${NHP_EDGE_CASES.length}`);
+  console.log(`  ✓ Exact match:   ${pass} (${(pass / NHP_EDGE_CASES.length * 100).toFixed(1)}%)`);
+  console.log(`  ~ Acceptable:    ${partialPass} (${(partialPass / NHP_EDGE_CASES.length * 100).toFixed(1)}%)`);
+  console.log(`  ✗ Failed:        ${fail} (${(fail / NHP_EDGE_CASES.length * 100).toFixed(1)}%)`);
+  console.log(`  Combined pass:   ${pass + partialPass} (${((pass + partialPass) / NHP_EDGE_CASES.length * 100).toFixed(1)}%)`);
+
+  const categories = [...new Set(NHP_EDGE_CASES.map(ec => ec.category))];
+  console.log("\n" + "-".repeat(60));
+  console.log("Results by Category:");
+  for (const cat of categories) {
+    const catResults = results.filter(r => r.edgeCase.category === cat);
+    const catPass = catResults.filter(r => r.pass).length;
+    const catAcceptable = catResults.filter(r => r.partialPass).length;
+    const catFail = catResults.filter(r => !r.pass && !r.partialPass).length;
+    const total = catResults.length;
+    console.log(`  ${cat.padEnd(20)} ${total} cases — ✓${catPass} ~${catAcceptable} ✗${catFail} (${((catPass + catAcceptable) / total * 100).toFixed(0)}% acceptable)`);
+  }
+
+  console.log("\n" + "-".repeat(60));
+  console.log("Results by Difficulty:");
+  for (const diff of ["easy", "medium", "hard"] as const) {
+    const diffResults = results.filter(r => r.edgeCase.difficulty === diff);
+    const diffPass = diffResults.filter(r => r.pass).length;
+    const diffAcceptable = diffResults.filter(r => r.partialPass).length;
+    const diffFail = diffResults.filter(r => !r.pass && !r.partialPass).length;
+    const total = diffResults.length;
+    if (total > 0) {
+      console.log(`  ${diff.padEnd(10)} ${total} cases — ✓${diffPass} ~${diffAcceptable} ✗${diffFail} (${((diffPass + diffAcceptable) / total * 100).toFixed(0)}% acceptable)`);
+    }
+  }
+
+  const failures = results.filter(r => !r.pass && !r.partialPass);
+  if (failures.length > 0) {
+    console.log("\n" + "-".repeat(60));
+    console.log(`FAILED CASES (${failures.length}):`);
+    for (const f of failures) {
+      console.log(`\n  #${f.edgeCase.id} [${f.edgeCase.category}/${f.edgeCase.difficulty}]`);
+      console.log(`  Query: "${f.edgeCase.query.slice(0, 80)}${f.edgeCase.query.length > 80 ? "..." : ""}"`);
+      console.log(`  Expected: ${f.edgeCase.expectedDomain} → Got: ${f.actual.domain} (${f.actual.confidence})`);
+      console.log(`  Reason: ${f.actual.reason}`);
+      if (f.edgeCase.notes) console.log(`  Notes: ${f.edgeCase.notes}`);
+    }
+  }
+
+  const partials = results.filter(r => r.partialPass);
+  if (partials.length > 0) {
+    console.log("\n" + "-".repeat(60));
+    console.log(`PARTIAL PASS (${partials.length}):`);
+    for (const p of partials) {
+      console.log(`  #${p.edgeCase.id} Expected: ${p.edgeCase.expectedDomain} → Got: ${p.actual.domain} — "${p.edgeCase.query.slice(0, 60)}..."`);
+    }
+  }
+
+  const lowConf = results.filter(r => r.pass && r.actual.confidence === "low");
+  if (lowConf.length > 0) {
+    console.log("\n" + "-".repeat(60));
+    console.log(`LOW CONFIDENCE (${lowConf.length}):`);
+    for (const l of lowConf) {
+      console.log(`  #${l.edgeCase.id} ${l.actual.domain} — "${l.edgeCase.query.slice(0, 60)}..."`);
+    }
+  }
+
+  console.log("\n" + "=".repeat(80));
 }
 
-/**
- * Classify a user query into a product domain (food, nhp, or both).
- * Uses LLM with keyword fallback. Results are cached.
- */
-export async function classifyDomain(query: string): Promise<DomainClassification> {
-  // Check cache
-  const cacheKey = query.toLowerCase().trim().slice(0, 200);
-  const cached = classificationCache.get(cacheKey);
-  if (cached) return cached;
-
-  // Try LLM classification first
-  const llmResult = await llmClassify(query);
-  const result = llmResult ?? keywordClassify(query);
-
-  console.log(`[domain-classifier] "${query.slice(0, 60)}..." → ${result.domain} (${result.confidence}): ${result.reason}`);
-
-  // Cache result
-  classificationCache.set(cacheKey, result);
-  return result;
-}
-
-/** Export for testing */
-export { keywordClassify, classificationCache };
+runTests();
