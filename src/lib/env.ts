@@ -25,6 +25,9 @@ const OPTIONAL_VARS: readonly OptionalEnvVar[] = [
   { key: "SUPABASE_SERVICE_ROLE_KEY", description: "Supabase service role key for admin operations" },
   { key: "OPENAI_API_KEY", description: "OpenAI API key for embedding generation" },
   { key: "EXA_API_KEY", description: "Exa API key for web search" },
+  { key: "STRIPE_SECRET_KEY", description: "Stripe secret key for payment processing" },
+  { key: "STRIPE_WEBHOOK_SECRET", description: "Stripe webhook signing secret" },
+  { key: "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", description: "Stripe publishable key (client-side)" },
 ] as const;
 
 export interface ValidatedEnv {
@@ -34,6 +37,9 @@ export interface ValidatedEnv {
   readonly SUPABASE_SERVICE_ROLE_KEY: string | undefined;
   readonly OPENAI_API_KEY: string | undefined;
   readonly EXA_API_KEY: string | undefined;
+  readonly STRIPE_SECRET_KEY: string | undefined;
+  readonly STRIPE_WEBHOOK_SECRET: string | undefined;
+  readonly NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: string | undefined;
 }
 
 function validateEnv(): ValidatedEnv {
@@ -65,6 +71,9 @@ function validateEnv(): ValidatedEnv {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
     OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim(),
     EXA_API_KEY: process.env.EXA_API_KEY?.trim(),
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim(),
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET?.trim(),
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim(),
   };
 }
 

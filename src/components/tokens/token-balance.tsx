@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Coins, LogOut, User, Copy, Check } from "lucide-react";
+import { Coins, LogOut, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTokens } from "@/hooks/use-tokens";
 import { useLanguage } from "@/hooks/use-language";
 import { AuthDialog } from "@/components/auth/auth-dialog";
+import { PurchaseDialog } from "./purchase-dialog";
 
 export function TokenBalance() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -92,6 +93,14 @@ export function TokenBalance() {
             <span>{t("Total Spent", "총 사용")}</span>
             <span className="tabular-nums">{balance?.total_spent ?? 0}</span>
           </div>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        <div className="px-2 py-1.5">
+          <PurchaseDialog
+            trigger={<Button variant="default" size="sm" className="w-full gap-1.5 text-xs" />}
+          />
         </div>
 
         {referralCode && (
