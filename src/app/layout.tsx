@@ -6,6 +6,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { TokenProvider } from "@/hooks/use-tokens";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Header } from "@/components/layout/header";
+import { OnboardingGuard } from "@/components/auth/onboarding-guard";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -50,8 +51,10 @@ export default function RootLayout({
             <TokenProvider>
               <LanguageProvider>
                 <TooltipProvider>
-                  <Header />
-                  <main id="main-content" className="container mx-auto py-4 px-4 md:px-6">{children}</main>
+                  <OnboardingGuard>
+                    <Header />
+                    <main id="main-content" className="container mx-auto py-4 px-4 md:px-6">{children}</main>
+                  </OnboardingGuard>
                 </TooltipProvider>
               </LanguageProvider>
             </TokenProvider>

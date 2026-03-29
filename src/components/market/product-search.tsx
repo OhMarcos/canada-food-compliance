@@ -53,7 +53,7 @@ export function ProductSearch() {
       });
 
       if (!response.ok) {
-        const authError = checkAuthError(response);
+        const authError = await checkAuthError(response);
         if (authError) throw new Error(authError);
         throw new Error(t(
           `Search failed (${response.status})`,

@@ -9,20 +9,19 @@ import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
 import { detectContentGap } from "@/lib/analytics/gaps";
 import { logQASession } from "@/lib/qa/logger";
-import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
+import { requireFreeTier, recordFreeTierUsage, isFreeTierSuccess } from "@/lib/auth/free-tier";
 
 export async function POST(request: NextRequest) {
   let step = "init";
   try {
-    // Step 1: Auth + token check
+    // Step 1: Free-tier access check (anonymous 1-use or daily cap)
     step = "auth";
-    const authResult = await requireTokens("chat");
-    if (!isAuthSuccess(authResult)) return authResult;
-    const { user } = authResult;
+    const accessResult = await requireFreeTier(request, "chat");
+    if (!isFreeTierSuccess(accessResult)) return accessResult;
 
-    // Step 2: Rate limit check (keyed by user ID)
+    // Step 2: Rate limit check
     step = "rate-limit";
-    const clientId = user.id ?? getClientIdentifier(request);
+    const clientId = accessResult.user?.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`chat:${clientId}`, RATE_LIMITS.chat);
     if (!rateCheck.allowed) {
       return NextResponse.json(
@@ -115,8 +114,8 @@ export async function POST(request: NextRequest) {
       } : undefined,
     };
 
-    // Consume tokens (fire-and-forget — already validated above)
-    void consumeTokens(user.id, "chat", `Chat: ${input.message.slice(0, 50)}`);
+    // Record free-tier usage (fire-and-forget)
+    const usageCookie = recordFreeTierUsage(request, accessResult, "chat");
 
     // Flywheel: capture analytics (fire-and-forget)
     const bestScore = qaResult.contexts.length > 0
@@ -151,7 +150,7 @@ export async function POST(request: NextRequest) {
     // QA monitoring: full session replay capture
     logQASession({
       sessionId,
-      userId: user.id,
+      userId: accessResult.user?.id ?? "anonymous",
       question: input.message,
       language: input.language,
       historyTurns: input.history?.length ?? 0,
@@ -170,7 +169,11 @@ export async function POST(request: NextRequest) {
       endpoint: "non-stream",
     });
 
-    return NextResponse.json(response);
+    const jsonResponse = NextResponse.json(response);
+    if (usageCookie) {
+      jsonResponse.headers.set("Set-Cookie", usageCookie);
+    }
+    return jsonResponse;
   } catch (error) {
     console.error("Chat API error:", error);
 

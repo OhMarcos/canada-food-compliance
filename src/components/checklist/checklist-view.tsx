@@ -107,7 +107,7 @@ export function ChecklistView() {
       });
 
       if (!response.ok) {
-        const authError = checkAuthError(response);
+        const authError = await checkAuthError(response);
         if (authError) throw new Error(authError);
         if (response.status === 429) {
           throw new Error(t(

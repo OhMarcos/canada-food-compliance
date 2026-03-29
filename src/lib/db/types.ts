@@ -127,6 +127,21 @@ export interface Database {
         Insert: Omit<Database["public"]["Tables"]["analytics_events"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["analytics_events"]["Insert"]>;
       };
+      business_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          business_name: string | null;
+          food_type: string | null;
+          website_url: string | null;
+          product_description: string | null;
+          target_market: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["business_profiles"]["Row"], "id" | "created_at" | "updated_at">;
+        Update: Partial<Database["public"]["Tables"]["business_profiles"]["Insert"]>;
+      };
       content_gap_signals: {
         Row: {
           id: string;

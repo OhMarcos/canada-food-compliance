@@ -15,7 +15,7 @@ import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
 import { detectContentGap } from "@/lib/analytics/gaps";
 import { logQASession } from "@/lib/qa/logger";
-import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
+import { requireFreeTier, recordFreeTierUsage, isFreeTierSuccess } from "@/lib/auth/free-tier";
 import type { RetrievedContext } from "@/lib/rag/retriever";
 import type { Citation } from "@/types/chat";
 
@@ -140,18 +140,16 @@ export async function POST(request: NextRequest) {
   let step = "init";
 
   try {
-    // Step 1: Auth + token check
+    // Step 1: Free-tier access check
     step = "auth";
-    const authResult = await requireTokens("chat-stream");
-    if (!isAuthSuccess(authResult)) {
-      // Pass through the original NextResponse (preserves correct status + body)
-      return authResult;
+    const accessResult = await requireFreeTier(request, "chat-stream");
+    if (!isFreeTierSuccess(accessResult)) {
+      return accessResult;
     }
-    const { user } = authResult;
 
-    // Step 2: Rate limit check (keyed by user ID)
+    // Step 2: Rate limit check
     step = "rate-limit";
-    const clientId = user.id ?? getClientIdentifier(request);
+    const clientId = accessResult.user?.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`stream:${clientId}`, RATE_LIMITS.stream);
     if (!rateCheck.allowed) {
       return new Response(
@@ -238,8 +236,7 @@ export async function POST(request: NextRequest) {
             encoder.encode(METADATA_DELIMITER + JSON.stringify(metadata)),
           );
 
-          // Consume tokens (fire-and-forget)
-          void consumeTokens(user.id, "chat-stream", `Stream: ${input.message.slice(0, 50)}`);
+          // Usage already recorded before stream started
 
           // Flywheel: capture analytics (fire-and-forget)
           const bestScore = contexts.length > 0
@@ -275,7 +272,7 @@ export async function POST(request: NextRequest) {
           // QA monitoring: full session replay capture
           logQASession({
             sessionId,
-            userId: user.id,
+            userId: accessResult.user?.id ?? "anonymous",
             question: input.message,
             language: input.language,
             historyTurns: input.history?.length ?? 0,
@@ -308,14 +305,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    });
+    const headers: Record<string, string> = {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Transfer-Encoding": "chunked",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    };
+
+    // Set guest usage cookie for anonymous users
+    const usageCookie = recordFreeTierUsage(request, accessResult, "chat-stream");
+    if (usageCookie) {
+      headers["Set-Cookie"] = usageCookie;
+    }
+
+    return new Response(readable, { headers });
   } catch (error) {
     console.error("Chat stream API error:", error);
 

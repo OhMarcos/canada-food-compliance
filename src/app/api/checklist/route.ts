@@ -4,7 +4,7 @@ import { getChecklist } from "@/lib/checklist/generator";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
 import { getSessionId } from "@/lib/analytics/session";
 import { captureEvent } from "@/lib/analytics/events";
-import { requireTokens, consumeTokens, isAuthSuccess } from "@/lib/auth/middleware";
+import { requireFreeTier, recordFreeTierUsage, isFreeTierSuccess } from "@/lib/auth/free-tier";
 
 const ChecklistRequestSchema = z.object({
   product_category: z.string().min(1).max(100),
@@ -14,18 +14,12 @@ const ChecklistRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth + token check
-    const authResult = await requireTokens("checklist");
-    if (!isAuthSuccess(authResult)) {
-      return NextResponse.json(
-        { error: "Authentication required", code: "AUTH_REQUIRED" },
-        { status: authResult.status },
-      );
-    }
-    const { user } = authResult;
+    // Free-tier access check
+    const accessResult = await requireFreeTier(request, "checklist");
+    if (!isFreeTierSuccess(accessResult)) return accessResult;
 
-    // Rate limit (keyed by user ID)
-    const clientId = user.id ?? getClientIdentifier(request);
+    // Rate limit
+    const clientId = accessResult.user?.id ?? getClientIdentifier(request);
     const rateCheck = checkRateLimit(`checklist:${clientId}`, RATE_LIMITS.api);
     if (!rateCheck.allowed) {
       return NextResponse.json(
@@ -50,8 +44,8 @@ export async function POST(request: NextRequest) {
       input.origin_country,
     );
 
-    // Consume tokens (fire-and-forget)
-    void consumeTokens(user.id, "checklist", `Checklist: ${input.product_category} (${input.activity_type})`);
+    // Record free-tier usage
+    const usageCookie = recordFreeTierUsage(request, accessResult, "checklist");
 
     // Flywheel: capture checklist analytics (fire-and-forget)
     captureEvent({
@@ -67,7 +61,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(result);
+    const jsonResponse = NextResponse.json(result);
+    if (usageCookie) {
+      jsonResponse.headers.set("Set-Cookie", usageCookie);
+    }
+    return jsonResponse;
   } catch (error) {
     console.error("Checklist API error:", error);
 
