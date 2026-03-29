@@ -27,8 +27,8 @@ export function useAuthGuard() {
           const body = await response.clone().json();
           if (body.code === "GUEST_LIMIT") {
             return t(
-              "Sign up for free to continue using ClearBite!",
-              "계속 사용하려면 무료 가입을 해주세요!",
+              "Sign up free — get AI Q&A, label scans & checklists daily",
+              "무료 가입하고 AI 상담, 라벨 분석, 체크리스트를 매일 이용하세요",
             ) as string;
           }
         } catch {
