@@ -46,11 +46,17 @@ const DEFAULT_DAILY_CAP = 5;
 /** Cookie name for tracking anonymous usage */
 const GUEST_COOKIE = "cb_guest_uses";
 
-/** HMAC secret for signing the guest cookie (falls back to Supabase anon key) */
-const COOKIE_SECRET =
-  process.env.COOKIE_SIGNING_SECRET ??
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-  "clearbite-default-secret";
+/** HMAC secret for signing the guest cookie */
+const COOKIE_SECRET = (() => {
+  const secret = process.env.COOKIE_SIGNING_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") {
+    console.error(
+      "CRITICAL: COOKIE_SIGNING_SECRET is not set in production. " +
+      "Guest tracking cookies can be forged. Set this env var immediately.",
+    );
+  }
+  return secret ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "clearbite-default-secret";
+})();
 
 // ---------------------------------------------------------------------------
 // HMAC-signed cookie helpers (prevents tampering)

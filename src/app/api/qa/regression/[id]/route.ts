@@ -4,12 +4,16 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/db/client";
+import { requireAdmin, isAdminSuccess } from "@/lib/auth/admin";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const adminResult = await requireAdmin();
+    if (!isAdminSuccess(adminResult)) return adminResult;
+
     const { id } = await params;
     const supabase = getSupabaseAdmin();
 

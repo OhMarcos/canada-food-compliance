@@ -5,12 +5,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/db/client";
 import { runRegressionSuite } from "@/lib/qa/regression";
+import { requireAdmin, isAdminSuccess } from "@/lib/auth/admin";
 
 /**
  * GET — List regression run history.
  */
 export async function GET() {
   try {
+    const adminResult = await requireAdmin();
+    if (!isAdminSuccess(adminResult)) return adminResult;
+
     const supabase = getSupabaseAdmin();
     const { data: runs, error } = await supabase
       .from("qa_regression_runs")
@@ -34,6 +38,9 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    const adminResult = await requireAdmin();
+    if (!isAdminSuccess(adminResult)) return adminResult;
+
     const body = await request.json().catch(() => ({}));
     const label = body.label as string | undefined;
 

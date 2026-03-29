@@ -4,9 +4,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/db/client";
+import { requireAdmin, isAdminSuccess } from "@/lib/auth/admin";
 
 export async function GET(request: NextRequest) {
   try {
+    const adminResult = await requireAdmin();
+    if (!isAdminSuccess(adminResult)) return adminResult;
+
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get("days") ?? "7", 10);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();

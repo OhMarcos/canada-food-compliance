@@ -54,7 +54,12 @@ export async function POST(request: NextRequest) {
   // 4. Create Stripe Checkout session
   try {
     const stripe = getStripe();
-    const origin = request.headers.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (!siteUrl) {
+      console.error("NEXT_PUBLIC_SITE_URL is not set — cannot create checkout session");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+    const origin = siteUrl;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",

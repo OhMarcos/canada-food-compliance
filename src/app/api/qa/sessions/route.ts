@@ -5,9 +5,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/db/client";
+import { requireAdmin, isAdminSuccess } from "@/lib/auth/admin";
 
 export async function GET(request: NextRequest) {
   try {
+    const adminResult = await requireAdmin();
+    if (!isAdminSuccess(adminResult)) return adminResult;
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") ?? "1", 10);
     const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 100);

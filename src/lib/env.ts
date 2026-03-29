@@ -28,6 +28,9 @@ const OPTIONAL_VARS: readonly OptionalEnvVar[] = [
   { key: "STRIPE_SECRET_KEY", description: "Stripe secret key for payment processing" },
   { key: "STRIPE_WEBHOOK_SECRET", description: "Stripe webhook signing secret" },
   { key: "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", description: "Stripe publishable key (client-side)" },
+  { key: "NEXT_PUBLIC_SITE_URL", description: "Public site URL (e.g. https://clearbite.ca) for Stripe redirects" },
+  { key: "COOKIE_SIGNING_SECRET", description: "HMAC secret for guest tracking cookies" },
+  { key: "ADMIN_EMAILS", description: "Comma-separated admin email whitelist" },
 ] as const;
 
 export interface ValidatedEnv {
