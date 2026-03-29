@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/chat", label_ko: "Q&A 상담", label_en: "Q&A Chat" },
   { href: "/product-check", label_ko: "제품 분석", label_en: "Product Check" },
   { href: "/checklist", label_ko: "체크리스트", label_en: "Checklist" },
+  { href: "/guides", label_ko: "가이드", label_en: "Guides" },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
