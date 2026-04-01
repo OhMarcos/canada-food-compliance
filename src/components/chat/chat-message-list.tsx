@@ -69,7 +69,7 @@ function AssistantMessage({
             totalCount={message.chatMessage.citations?.length}
           />
           <span className="text-xs text-muted-foreground">
-            {t("3-step verification complete", "3단계 검증 완료")}
+            {t("Checked against regulation database", "규제 데이터베이스 대조 완료")}
           </span>
           {message.processingTimeMs && (
             <span className="text-xs text-muted-foreground flex items-center gap-0.5">

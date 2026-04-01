@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, Manrope, Source_Code_Pro } from "next/font/google";
+import { Inter, Source_Code_Pro } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/hooks/use-language";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -9,16 +9,10 @@ import { Header } from "@/components/layout/header";
 import { OnboardingGuard } from "@/components/auth/onboarding-guard";
 import "./globals.css";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
-});
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
 const sourceCodePro = Source_Code_Pro({
@@ -44,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${outfit.variable} ${manrope.variable} ${sourceCodePro.variable} antialiased`}
+        className={`${inter.variable} ${sourceCodePro.variable} antialiased`}
       >
         <ErrorBoundary>
           <AuthProvider>
